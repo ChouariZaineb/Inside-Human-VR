@@ -2,8 +2,8 @@
  * Point d'entrée de l'application Inside Human VR.
  * Initialise le moteur et charge la scène de départ.
  */
-import { Renderer } from './core/Renderer.js';
+import { Engine } from './core/Engine.js';
 
-const view = new Renderer( document.body );
-await view.init();
-view.setAnimationLoop( () => view.render() );
+const engine = new Engine( document.body );
+await engine.init();
+engine.start();
