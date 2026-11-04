@@ -6,6 +6,7 @@ import { Engine } from './core/Engine.js';
 import { XRManager } from './core/XRManager.js';
 import { DesktopControls } from './core/DesktopControls.js';
 import { Interaction } from './systems/Interaction.js';
+import { Teleport } from './systems/Teleport.js';
 
 const engine = new Engine( document.getElementById( 'app' ) );
 await engine.init();
@@ -21,5 +22,6 @@ xr.addEventListener( 'sessionstart', () => desktop.setEnabled( false ) );
 xr.addEventListener( 'sessionend', () => desktop.setEnabled( true ) );
 
 const interaction = new Interaction( engine, xr, desktop );
+const teleport = new Teleport( engine, interaction );
 
 engine.start();
