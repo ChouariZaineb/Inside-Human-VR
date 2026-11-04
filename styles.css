@@ -1,2 +1,6 @@
 /* Styles de base de Inside Human VR (l'écran d'accueil final est la tâche de Melek). */
 html, body { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, sans-serif; }
+
+/* Réticule du mode bureau, au centre de l'écran. */
+#reticle { position: fixed; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+	border: 2px solid #fff; border-radius: 50%; pointer-events: none; }
