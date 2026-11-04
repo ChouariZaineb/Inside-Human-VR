@@ -58,4 +58,15 @@ xr.addEventListener( 'error', () => {
 // 5. Scène chargée par défaut (en attendant les niveaux).
 createTestScene( { engine, interaction, teleport } );
 
+// 6. Compteur d'images/s, seulement en développement (retiré du build).
+if ( import.meta.env.DEV ) {
+
+	const { default: Stats } = await import( 'three/addons/libs/stats.module.js' );
+	const stats = new Stats();
+	stats.dom.style.zIndex = '20'; // au-dessus de l'écran d'accueil
+	document.body.appendChild( stats.dom );
+	engine.onUpdate( () => stats.update() );
+
+}
+
 engine.start();
