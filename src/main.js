@@ -7,6 +7,7 @@ import { XRManager } from './core/XRManager.js';
 import { DesktopControls } from './core/DesktopControls.js';
 import { Interaction } from './systems/Interaction.js';
 import { Teleport } from './systems/Teleport.js';
+import { createTestScene } from './debug/TestScene.js';
 
 const engine = new Engine( document.getElementById( 'app' ) );
 await engine.init();
@@ -23,5 +24,8 @@ xr.addEventListener( 'sessionend', () => desktop.setEnabled( true ) );
 
 const interaction = new Interaction( engine, xr, desktop );
 const teleport = new Teleport( engine, interaction );
+
+// Scène chargée par défaut (en attendant les niveaux).
+createTestScene( { engine, interaction, teleport } );
 
 engine.start();
