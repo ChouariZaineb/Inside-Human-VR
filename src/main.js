@@ -21,8 +21,13 @@ await engine.init();
 
 // 2. Entrées : VR et mode bureau
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
-await xr.init();
-if ( ! xr.supported ) status.textContent = 'VR non disponible : utilisez le mode bureau (ou Immersive Web Emulator).';
+
+// Vérification du support VR en parallèle : ne bloque pas le démarrage de la scène.
+xr.init().then( ( supported ) => {
+
+	if ( ! supported ) status.textContent = 'VR non disponible : utilisez le mode bureau (ou Immersive Web Emulator).';
+
+} );
 
 const desktop = new DesktopControls( engine, document.getElementById( 'reticle' ) );
 document.getElementById( 'btn-desktop' ).addEventListener( 'click', () => desktop.lock() );
@@ -66,6 +71,9 @@ if ( import.meta.env.DEV ) {
 	stats.dom.style.zIndex = '20'; // au-dessus de l'écran d'accueil
 	document.body.appendChild( stats.dom );
 	engine.onUpdate( () => stats.update() );
+
+	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
+	window.app = { engine, xr, desktop, interaction, teleport };
 
 }
 

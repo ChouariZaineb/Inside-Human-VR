@@ -52,22 +52,37 @@ export class XRManager extends THREE.EventDispatcher {
 
 		this._onSessionEnd = this._onSessionEnd.bind( this );
 
+		// Manettes créées tout de suite : les systèmes peuvent les utiliser dès le départ.
+		this._setupControllers();
+
 		// Si le renderer est remplacé (repli WebGL), on recrée les manettes.
 		engine.addEventListener( 'rendererchange', () => this._setupControllers() );
+
+		if ( this.button ) {
+
+			this.button.disabled = true;
+			this.button.textContent = 'Vérification de la VR…';
+			this.button.addEventListener( 'click', () => this.toggle() );
+
+		}
 
 	}
 
 	/**
-	 * Vérifie le support WebXR et prépare le bouton et les manettes.
+	 * Vérifie le support WebXR et met à jour le bouton.
+	 * Ne bloque jamais plus de `timeout` ms (certains navigateurs ne répondent pas).
+	 * @param {number} [timeout=3000] - Délai maximal d'attente (ms).
 	 * @returns {Promise<boolean>} Vrai si la VR est disponible.
 	 */
-	async init() {
+	async init( timeout = 3000 ) {
 
 		if ( 'xr' in navigator ) {
 
 			try {
 
-				this.supported = await navigator.xr.isSessionSupported( 'immersive-vr' );
+				const check = navigator.xr.isSessionSupported( 'immersive-vr' );
+				const timer = new Promise( ( resolve ) => setTimeout( () => resolve( false ), timeout ) );
+				this.supported = await Promise.race( [ check, timer ] );
 
 			} catch ( error ) {
 
@@ -77,10 +92,7 @@ export class XRManager extends THREE.EventDispatcher {
 
 		}
 
-		this._setupControllers();
 		this._updateButton();
-
-		if ( this.button ) this.button.addEventListener( 'click', () => this.toggle() );
 
 		console.info( `[XR] immersive-vr ${this.supported ? 'disponible' : 'non disponible'}` );
 		return this.supported;
