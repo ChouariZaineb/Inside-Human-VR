@@ -5,6 +5,7 @@
 import { Engine } from './core/Engine.js';
 import { XRManager } from './core/XRManager.js';
 import { DesktopControls } from './core/DesktopControls.js';
+import { Interaction } from './systems/Interaction.js';
 
 const engine = new Engine( document.getElementById( 'app' ) );
 await engine.init();
@@ -18,5 +19,7 @@ document.getElementById( 'btn-desktop' ).addEventListener( 'click', () => deskto
 // Le mode bureau est coupé pendant la VR.
 xr.addEventListener( 'sessionstart', () => desktop.setEnabled( false ) );
 xr.addEventListener( 'sessionend', () => desktop.setEnabled( true ) );
+
+const interaction = new Interaction( engine, xr, desktop );
 
 engine.start();
