@@ -21,12 +21,20 @@ npm run preview    # teste le build de production en local
 
 ### Tester la VR sans casque (Immersive Web Emulator)
 
-1. Installer l'extension Chrome **Immersive Web Emulator** (Meta), puis redémarrer Chrome.
-2. Ouvrir `http://localhost:5173`, puis les outils de développement (F12) → onglet **WebXR**.
-   Choisir l'appareil **Meta Quest**.
-3. Recharger la page : le bouton **Entrer en VR** devient actif. Cliquer dessus.
-4. Dans l'onglet WebXR, déplacer une manette pour viser un **disque bleu**, puis appuyer sur la
-   **gâchette** (trigger) pour s'y téléporter. Viser une sphère + gâchette affiche son nom dans la console.
+Avec la version 2.0 de l'extension, l'émulation s'active **site par site** depuis la barre d'outils
+(il n'y a plus de contrôles dans l'onglet WebXR des outils de développement) :
+
+1. Installer l'extension Chrome **Immersive Web Emulator** (Meta).
+2. L'épingler : icône 🧩 Extensions de Chrome → punaise 📌 à côté de « Immersive Web Emulator ».
+3. Ouvrir `http://localhost:5173`, puis cliquer sur l'icône de l'extension : elle passe du **bleu**
+   (inactive) au **vert** (activée) et la page se recharge.
+4. La console (F12) affiche `[XR] immersive-vr disponible` et le bouton **Entrer en VR** devient actif. Cliquer dessus.
+5. Avec les contrôles flottants affichés **sur la page** (casque, manettes), orienter une manette vers
+   un **disque bleu** puis appuyer sur la **gâchette** (trigger) pour s'y téléporter.
+   Viser une sphère + gâchette affiche son nom dans la console.
+
+Le panneau WebXR des outils de développement (F12) ne sert plus qu'aux réglages par défaut
+(appareil, environnement, IPD, champ de vision).
 
 ### Mode bureau (sans VR)
 

@@ -96,7 +96,7 @@ export class XRManager extends THREE.EventDispatcher {
 
 		}
 
-		let reason = 'aucun casque détecté (activez Immersive Web Emulator puis rechargez la page)';
+		let reason = 'aucun casque détecté (cliquez sur l\'icône Immersive Web Emulator dans la barre d\'outils pour l\'activer sur ce site)';
 
 		try {
 
