@@ -23,11 +23,12 @@ await engine.init();
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
 
 // Vérification du support VR en parallèle : ne bloque pas le démarrage de la scène.
-xr.init().then( ( supported ) => {
+xr.addEventListener( 'supportchange', ( { supported } ) => {
 
-	if ( ! supported ) status.textContent = 'VR non disponible : utilisez le mode bureau (ou Immersive Web Emulator).';
+	status.textContent = supported ? '' : 'VR non disponible : utilisez le mode bureau (ou Immersive Web Emulator).';
 
 } );
+xr.init();
 
 const desktop = new DesktopControls( engine, document.getElementById( 'reticle' ) );
 document.getElementById( 'btn-desktop' ).addEventListener( 'click', () => desktop.lock() );

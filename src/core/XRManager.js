@@ -76,25 +76,50 @@ export class XRManager extends THREE.EventDispatcher {
 	 */
 	async init( timeout = 3000 ) {
 
-		if ( 'xr' in navigator ) {
+		if ( ! ( 'xr' in navigator ) ) {
 
-			try {
+			console.info( '[XR] immersive-vr non disponible : WebXR absent (navigateur non compatible ou page non sécurisée, utilisez localhost ou HTTPS)' );
+			this._updateButton();
+			return false;
 
-				const check = navigator.xr.isSessionSupported( 'immersive-vr' );
-				const timer = new Promise( ( resolve ) => setTimeout( () => resolve( false ), timeout ) );
-				this.supported = await Promise.race( [ check, timer ] );
+		}
 
-			} catch ( error ) {
+		// Un casque (ou l'émulateur) peut apparaître après le chargement : on revérifie.
+		if ( ! this._listeningDevices ) {
 
-				console.warn( '[XR] Vérification du support impossible :', error );
+			this._listeningDevices = true;
+			navigator.xr.addEventListener( 'devicechange', () => {
 
-			}
+				if ( ! this.isPresenting ) this.init( timeout );
+
+			} );
+
+		}
+
+		let reason = 'aucun casque détecté (activez Immersive Web Emulator puis rechargez la page)';
+
+		try {
+
+			const check = navigator.xr.isSessionSupported( 'immersive-vr' );
+			const timer = new Promise( ( resolve ) => setTimeout( () => resolve( null ), timeout ) );
+			const result = await Promise.race( [ check, timer ] );
+
+			if ( result === null ) reason = `pas de réponse du navigateur en ${timeout} ms`;
+			this.supported = result === true;
+
+		} catch ( error ) {
+
+			reason = `erreur lors de la vérification (${error.message})`;
+			this.supported = false;
 
 		}
 
 		this._updateButton();
 
-		console.info( `[XR] immersive-vr ${this.supported ? 'disponible' : 'non disponible'}` );
+		if ( this.supported ) console.info( '[XR] immersive-vr disponible' );
+		else console.info( `[XR] immersive-vr non disponible : ${reason}` );
+
+		this.dispatchEvent( { type: 'supportchange', supported: this.supported } );
 		return this.supported;
 
 	}
