@@ -142,6 +142,8 @@ export class Renderer extends THREE.EventDispatcher {
 
 		}
 
+		if ( newRenderer.backend.isWebGLBackend === true ) patchNullXRFramebuffer( newRenderer );
+
 		this.renderer = newRenderer;
 		this.pipeline = new THREE.DirectRenderPipeline( newRenderer );
 
@@ -160,5 +162,41 @@ export class Renderer extends THREE.EventDispatcher {
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 
 	}
+
+}
+
+/**
+ * Correctif de compatibilité avec Immersive Web Emulator.
+ *
+ * L'émulateur dessine directement dans le canvas de la page : son XRWebGLLayer.framebuffer
+ * vaut `null` (le framebuffer par défaut). Le backend WebGL de Three.js r187 utilise ce
+ * framebuffer comme clé d'une WeakMap dans `state.drawBuffers()`, ce qui lève
+ * « Invalid value used as weak map key » à chaque image : rien ne s'affiche en VR.
+ * Pour le framebuffer par défaut, on règle simplement la sortie sur gl.BACK.
+ * Sur un vrai casque, le framebuffer n'est jamais null et ce correctif n'intervient pas.
+ * @param {THREE.WebGPURenderer} renderer - Renderer dont le backend est WebGL.
+ */
+function patchNullXRFramebuffer( renderer ) {
+
+	const state = renderer.backend.state;
+	if ( ! state || state._nullFramebufferPatched ) return;
+
+	const drawBuffers = state.drawBuffers.bind( state );
+	let defaultReady = false;
+
+	state.drawBuffers = ( renderContext, framebuffer ) => {
+
+		if ( framebuffer !== null ) return drawBuffers( renderContext, framebuffer );
+
+		if ( ! defaultReady ) {
+
+			state.gl.drawBuffers( [ state.gl.BACK ] );
+			defaultReady = true;
+
+		}
+
+	};
+
+	state._nullFramebufferPatched = true;
 
 }
