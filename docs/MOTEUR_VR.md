@@ -13,6 +13,8 @@ Ce document explique chaque fichier du moteur : ce qu'il fait, comment il le fai
 | `src/systems/Interaction.js` | Savoir ce que l'utilisateur vise et sélectionne (raycasting) |
 | `src/systems/Teleport.js` | Se déplacer par téléportation, avec un fondu au noir |
 | `src/scenes/BodyScene.js` | La scène de départ : le corps humain |
+| `src/core/LevelManager.js` | Charge un niveau à la fois et passe de l'un à l'autre |
+| `src/levels/LungsLevel.js` | Le niveau 2 : les poumons et les échanges gazeux |
 | `src/debug/TestScene.js` | Une scène de test du moteur, sans modèle |
 
 ---
@@ -150,6 +152,36 @@ C'est la scène affichée au démarrage. Elle répond à la demande : *afficher 
 Une scène sans modèle externe pour tester le moteur seul : un tunnel (`TubeGeometry`) qui évoque un vaisseau sanguin,
 un sol, 3 points de téléportation et 3 sphères sélectionnables (globule rouge, globule blanc, plaquette).
 Elle sert aussi d'exemple d'utilisation de l'API du moteur. On l'ouvre avec `http://localhost:5173/?test`.
+
+## 11. `src/core/LevelManager.js` : passer d'un niveau à l'autre
+
+Il garde **un seul niveau en mémoire** à la fois. Pour charger un niveau (`load(id)`) :
+
+1. il libère le niveau courant : ses objets pointables sont retirés d'`Interaction`, ses points de téléportation effacés, puis son `dispose()` est appelé ;
+2. il crée le nouveau niveau avec la « fabrique » enregistrée par `register(id, fabrique)`, puis attend `load()` ;
+3. il installe ses points de téléportation (`getTeleportPoints()`) et place le joueur sur le premier ;
+4. il relie ses objets pointables (`getInteractables()`) à `Interaction` ;
+5. il appelle `start()`, puis `update(delta, elapsed)` à chaque image.
+
+**Le lien avec le code de Melek** : `BaseLevel` attend l'événement `EVENTS.OBJECT_SELECTED` sur l'`EventBus`. Quand `Interaction` signale une sélection, `LevelManager` émet cet événement : les niveaux de Melek fonctionnent donc avec le moteur sans modification.
+
+**La suite des niveaux** : quand un niveau émet `EVENTS.LEVEL_COMPLETED`, `LevelManager` charge le niveau qu'il débloque (champ `unlocks` de `levels.json`) s'il existe, sinon il revient à la scène de départ (`home`).
+
+Dans `main.js` : `home` (le corps humain), `heart` (`HeartLevel` de Melek) et `lungs` (`LungsLevel`) sont enregistrés. Sélectionner le cœur dans la scène de départ lance le niveau 1. Pour tester un niveau directement : `http://localhost:5173/?level=lungs`.
+
+## 12. `src/levels/LungsLevel.js` : le niveau des poumons
+
+Il **hérite de `BaseLevel`** (classe de Melek, patron Template Method) : il ne redéfinit que les « crochets » `onLoad`, `onStart`, `onSelect`, `onUpdate` et `onDispose`. Les textes viennent de `levels.json`.
+
+- **Décor généré par code** : une bronche (cylindre), une alvéole (sphère rose transparente qui « respire ») et un capillaire (demi-anneau autour de l'alvéole).
+- **Molécules** : 3 O₂ (deux atomes rouges) devant l'alvéole et 3 CO₂ (un atome gris entre deux rouges) devant le capillaire.
+- **Déroulé** (machine à états `GameState` de Melek) : arrivée (bouton « Explorer ») → exploration (pointer un élément affiche son rôle) → mission → résultat (bouton « Continuer ») → terminé.
+- **Mission en deux gestes**, identique en VR et en bureau : sélectionner une molécule (elle grossit et s'allume en jaune), puis sélectionner sa destination.
+  - Bonne destination : `gameState.recordCorrect()`, la molécule traverse la paroi en 0,8 s.
+  - Mauvaise destination : `gameState.recordError()` et message d'erreur de `levels.json` (−10 points).
+  - Même endroit que le départ : la molécule est simplement relâchée.
+- **Le sang change de couleur** : la couleur du capillaire passe du bleu au rouge selon le nombre d'O₂ arrivés (`Color.lerp`).
+- À la fin : `gameState.finishLevel()` enregistre le score et débloque le niveau du cerveau.
 
 ---
 

@@ -95,7 +95,8 @@ Inside-Human-VR/
 │   │   ├── Engine.js           API centrale (scene, camera, player, onUpdate, isVR)
 │   │   ├── Renderer.js         WebGPURenderer, scène, caméra, lumières, repli XR
 │   │   ├── XRManager.js        Session immersive-vr, manettes, rayons
-│   │   └── DesktopControls.js  Mode bureau (PointerLockControls, réticule)
+│   │   ├── DesktopControls.js  Mode bureau (PointerLockControls, réticule)
+│   │   └── LevelManager.js     Chargement des niveaux et passage de l'un à l'autre
 │   ├── scenes/
 │   │   └── BodyScene.js        Scène de départ : le corps humain en VR   → Zaineb
 │   ├── debug/
@@ -110,7 +111,7 @@ Inside-Human-VR/
 │   │   ├── EventBus.js         Bus d'événements                          → Melek
 │   │   └── UIPanel.js          Panneaux 3D flottants                     → Melek
 │   ├── shaders/              Shaders TSL (bloodFlow, tissuePulse)        → Yessmine
-│   ├── levels/               BaseLevel, HeartLevel                       → Melek
+│   ├── levels/               BaseLevel, HeartLevel → Melek ; LungsLevel → Zaineb
 │   └── data/                 GameState (machine à états, score)          → Melek
 └── public/assets/
     ├── models/               Modèles GLB (si besoin)                     → Yessmine
@@ -255,8 +256,11 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Correction du moteur : `delta` borné entre 0 et 0,1 s (le premier delta pouvait être négatif) | Fait |
 | 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | `BodyScene.js` : corps humain en `immersive-vr`, 3 points de téléportation, cœur sélectionnable | Fait |
 | 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Dossier `docs/` : `ARCHITECTURE.md`, `MOTEUR_VR.md`, `GUIDE_GIT.md` ; journal des Sprints 1 et 2 | Fait |
-| 2026-11-12 | Malouli Melek | `feature/niveau-coeur-integration` | Brancher `HeartLevel` sur le moteur (`interaction`, `teleport`) et l'ouvrir depuis le cœur de `BodyScene` | En cours |
+| 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | Tester `HeartLevel` dans l'application (lancé par `LevelManager` depuis le cœur de `BodyScene`) et ajuster textes et positions | En cours |
 | 2026-11-12 | Hentati Yessmine | `feature/visuels-niveau-coeur` | Remplacer les formes provisoires de `HeartLevel` par le cœur procédural (`registerElement`) | En cours |
-| 2026-11-13 | Chouari Zaineb | `feature/niveau-poumons` | `LevelManager.js` (chargement et transition entre niveaux) et `LungsLevel.js` | En cours |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LevelManager.js` : un niveau en mémoire à la fois, transitions, lien `Interaction` → `EventBus` pour les niveaux de `BaseLevel` | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LungsLevel.js` : alvéole, bronche, capillaire, mission des échanges gazeux (O₂ et CO₂), sang qui passe du bleu au rouge | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `main.js` : parcours scène de départ → cœur → poumons → retour, adresse `?level=` pour les tests | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | Documentation de `LevelManager` et `LungsLevel` dans `docs/MOTEUR_VR.md` | Fait |
 | 2026-11-14 | Hentati Yessmine | `feature/visuels-poumons-cerveau` | Respiration, changement de couleur du sang, shader `neuronSignal.js`, `AudioManager.js` | À faire |
 | 2026-11-14 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.js`, `Storage.js` (IndexedDB), déblocage des niveaux | À faire |
