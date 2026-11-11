@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "langue": "fr",
+  "relecture": "À faire relire par un enseignant de biologie avant la soutenance (voir cahier des charges, section 9).",
+  "levels": [
+    {
+      "id": "heart",
+      "index": 1,
+      "organ": "Le cœur",
+      "titre": "Niveau 1 – Le cœur",
+      "notion": "La circulation sanguine, le rôle des cavités et des valves",
+      "unlocks": "lungs",
+      "intro": {
+        "titre": "Bienvenue dans le cœur !",
+        "texte": "Tu es devenu un minuscule globule rouge. Autour de toi, le sang circule et le cœur bat. Ton voyage commence dans une grosse veine qui ramène le sang du corps vers le cœur."
+      },
+      "exploration": {
+        "titre": "Explore le cœur",
+        "texte": "Pointe chaque élément pour découvrir son nom et son rôle. Quand tu te sens prêt, lance la mission."
+      },
+      "elements": [
+        {
+          "id": "vena_cava",
+          "nom": "Veine cave",
+          "fonction": "Grosse veine qui ramène vers le cœur le sang du corps, pauvre en oxygène."
+        },
+        {
+          "id": "right_atrium",
+          "nom": "Oreillette droite",
+          "fonction": "Reçoit le sang pauvre en oxygène venant du corps, puis l'envoie vers le ventricule droit à travers la valve tricuspide."
+        },
+        {
+          "id": "right_ventricle",
+          "nom": "Ventricule droit",
+          "fonction": "Propulse le sang pauvre en oxygène vers les poumons par l'artère pulmonaire."
+        },
+        {
+          "id": "pulmonary_artery",
+          "nom": "Artère pulmonaire",
+          "fonction": "Emmène le sang pauvre en oxygène vers les poumons, où il se recharge en oxygène."
+        },
+        {
+          "id": "left_atrium",
+          "nom": "Oreillette gauche",
+          "fonction": "Reçoit le sang riche en oxygène qui revient des poumons."
+        },
+        {
+          "id": "left_ventricle",
+          "nom": "Ventricule gauche",
+          "fonction": "Envoie le sang riche en oxygène vers tout le corps par l'aorte. Sa paroi est la plus épaisse du cœur."
+        }
+      ],
+      "mission": {
+        "titre": "Mission : guide le globule rouge",
+        "consigne": "Suis le trajet du sang pauvre en oxygène : touche dans le bon ordre la veine cave, l'oreillette droite, le ventricule droit, puis l'artère pulmonaire.",
+        "type": "sequence",
+        "sequence": [
+          {
+            "id": "vena_cava",
+            "indice": "Le sang revient du corps par une grosse veine.",
+            "explication": "Bien joué ! Le sang du corps entre dans le cœur par la veine cave."
+          },
+          {
+            "id": "right_atrium",
+            "indice": "Quelle est la première cavité qui reçoit le sang du corps ?",
+            "explication": "Le sang arrive dans l'oreillette droite. Elle se contracte et le pousse à travers la valve tricuspide."
+          },
+          {
+            "id": "right_ventricle",
+            "indice": "Après l'oreillette, le sang passe dans la cavité du dessous, du même côté.",
+            "explication": "Le ventricule droit se contracte et propulse le sang vers les poumons. La valve pulmonaire l'empêche de revenir en arrière."
+          },
+          {
+            "id": "pulmonary_artery",
+            "indice": "Le sang quitte le cœur vers les poumons par une artère.",
+            "explication": "L'artère pulmonaire emmène le sang vers les poumons, où il va se charger en oxygène."
+          }
+        ],
+        "erreurs": {
+          "left_atrium": "L'oreillette gauche reçoit du sang déjà chargé en oxygène, après son passage par les poumons. Ton globule rouge n'y arrive pas encore.",
+          "left_ventricle": "Le ventricule gauche envoie le sang oxygéné vers tout le corps. Ton globule rouge doit d'abord passer par les poumons."
+        },
+        "erreurGenerique": "Pas encore, ce n'est pas la bonne étape."
+      },
+      "reussite": {
+        "titre": "Mission réussie !",
+        "texte": "Tu as suivi le sang du corps jusqu'aux poumons : veine cave, oreillette droite, ventricule droit, artère pulmonaire. Le niveau des poumons est débloqué."
+      },
+      "questions": [
+        {
+          "id": "heart_q1",
+          "question": "Quel est le rôle des valves du cœur ?",
+          "choix": [
+            "Elles empêchent le sang de revenir en arrière",
+            "Elles fabriquent les globules rouges",
+            "Elles filtrent les déchets du sang",
+            "Elles stockent l'oxygène"
+          ],
+          "reponse": 0,
+          "explication": "Les valves s'ouvrent dans un sens seulement : le sang avance toujours dans la même direction."
+        },
+        {
+          "id": "heart_q2",
+          "question": "Quelle cavité envoie le sang vers les poumons ?",
+          "choix": ["Le ventricule gauche", "Le ventricule droit", "L'oreillette gauche", "L'aorte"],
+          "reponse": 1,
+          "explication": "Le ventricule droit envoie le sang vers les poumons par l'artère pulmonaire."
+        },
+        {
+          "id": "heart_q3",
+          "question": "Le sang qui arrive dans l'oreillette droite est…",
+          "choix": [
+            "riche en oxygène",
+            "pauvre en oxygène",
+            "sans aucun globule rouge",
+            "toujours plus chaud que le sang des poumons"
+          ],
+          "reponse": 1,
+          "explication": "Il revient du corps, qui a utilisé une partie de l'oxygène. Il est donc pauvre en oxygène."
+        }
+      ],
+      "sources": [
+        { "titre": "Manuels de SVT (collège et lycée), chapitre sur la circulation sanguine", "type": "manuel" },
+        { "titre": "Inserm, dossiers d'information : le cœur", "type": "institution" },
+        { "titre": "Fédération Française de Cardiologie, fiches « Comment fonctionne le cœur »", "type": "institution" }
+      ]
+    },
+    {
+      "id": "lungs",
+      "index": 2,
+      "organ": "Les poumons",
+      "titre": "Niveau 2 – Les poumons",
+      "notion": "Les échanges gazeux entre l'air et le sang",
+      "unlocks": "brain",
+      "intro": {
+        "titre": "Bienvenue dans les poumons !",
+        "texte": "Ton voyage t'a conduit dans une alvéole pulmonaire : une minuscule poche d'air entourée de capillaires, de tout petits vaisseaux sanguins. C'est ici que le sang se recharge en oxygène."
+      },
+      "exploration": {
+        "titre": "Explore l'alvéole",
+        "texte": "Pointe la bronche, l'alvéole et le capillaire pour comprendre où l'air et le sang se rencontrent."
+      },
+      "elements": [
+        {
+          "id": "bronchus",
+          "nom": "Bronche",
+          "fonction": "Conduit l'air de la trachée jusqu'aux alvéoles."
+        },
+        {
+          "id": "alveolus",
+          "nom": "Alvéole pulmonaire",
+          "fonction": "Petite poche remplie d'air, à la paroi très fine, où ont lieu les échanges gazeux."
+        },
+        {
+          "id": "capillary",
+          "nom": "Capillaire sanguin",
+          "fonction": "Très petit vaisseau qui entoure l'alvéole. Le sang y échange ses gaz avec l'air."
+        }
+      ],
+      "mission": {
+        "titre": "Mission : les échanges gazeux",
+        "consigne": "Déplace les molécules d'oxygène (O₂) de l'alvéole vers le sang, et les molécules de dioxyde de carbone (CO₂) du sang vers l'air de l'alvéole.",
+        "type": "transfer",
+        "molecules": [
+          {
+            "id": "o2",
+            "symbole": "O₂",
+            "nom": "Dioxygène",
+            "depuis": "alveolus",
+            "vers": "capillary",
+            "explication": "L'oxygène passe de l'air de l'alvéole vers le sang. Le sang en transporte ensuite dans tout le corps."
+          },
+          {
+            "id": "co2",
+            "symbole": "CO₂",
+            "nom": "Dioxyde de carbone",
+            "depuis": "capillary",
+            "vers": "alveolus",
+            "explication": "Le dioxyde de carbone, un déchet du corps, passe du sang vers l'air de l'alvéole. Tu l'expires ensuite."
+          }
+        ],
+        "erreurGenerique": "Pas dans ce sens ! Regarde bien d'où vient chaque molécule."
+      },
+      "reussite": {
+        "titre": "Mission réussie !",
+        "texte": "Le sang a échangé son dioxyde de carbone contre de l'oxygène. Il est maintenant riche en oxygène. Le niveau du cerveau est débloqué."
+      },
+      "notes": [
+        "Dans les schémas, le sang pauvre en oxygène est coloré en bleu et le sang riche en oxygène en rouge. C'est une convention : en réalité, le sang est toujours rouge, plus sombre quand il manque d'oxygène."
+      ],
+      "questions": [
+        {
+          "id": "lungs_q1",
+          "question": "Que fait le sang quand il traverse les capillaires de l'alvéole ?",
+          "choix": [
+            "Il se charge en oxygène et se débarrasse du dioxyde de carbone",
+            "Il se charge en dioxyde de carbone",
+            "Il perd tous ses globules rouges",
+            "Il s'arrête de circuler"
+          ],
+          "reponse": 0,
+          "explication": "C'est l'échange gazeux : le sang prend de l'oxygène à l'air et lui cède du dioxyde de carbone."
+        },
+        {
+          "id": "lungs_q2",
+          "question": "Pourquoi la paroi de l'alvéole est-elle très fine ?",
+          "choix": [
+            "Pour faciliter le passage des gaz",
+            "Pour stocker plus d'air",
+            "Pour filtrer la poussière",
+            "Pour faire du bruit à la respiration"
+          ],
+          "reponse": 0,
+          "explication": "Plus la paroi est fine, plus les gaz la traversent facilement entre l'air et le sang."
+        }
+      ],
+      "sources": [
+        { "titre": "Manuels de SVT (collège et lycée), chapitre sur la respiration", "type": "manuel" },
+        { "titre": "Inserm, dossiers d'information : la respiration et les poumons", "type": "institution" }
+      ]
+    },
+    {
+      "id": "brain",
+      "index": 3,
+      "organ": "Le cerveau",
+      "titre": "Niveau 3 – Le cerveau",
+      "notion": "La transmission de l'influx nerveux et le rôle des synapses",
+      "unlocks": null,
+      "intro": {
+        "titre": "Bienvenue dans le cerveau !",
+        "texte": "Te voici au milieu d'un réseau de neurones. Ces cellules se transmettent des messages sous forme de signaux. Ton but : faire voyager un signal jusqu'à sa cible."
+      },
+      "exploration": {
+        "titre": "Explore le réseau",
+        "texte": "Pointe les neurones pour découvrir leur rôle. Entre deux neurones, le signal passe par une zone appelée synapse."
+      },
+      "elements": [
+        {
+          "id": "sensory_neuron",
+          "nom": "Neurone sensoriel",
+          "fonction": "Reçoit l'information venant des sens (toucher, vue…) et la transmet vers le cerveau."
+        },
+        {
+          "id": "relay_neuron",
+          "nom": "Neurone relais",
+          "fonction": "Analyse l'information et la transmet au neurone suivant."
+        },
+        {
+          "id": "motor_neuron",
+          "nom": "Neurone moteur",
+          "fonction": "Envoie l'ordre du cerveau vers un muscle, qui peut alors bouger."
+        },
+        {
+          "id": "synapse",
+          "nom": "Synapse",
+          "fonction": "Zone de jonction entre deux neurones, où le message passe de l'un à l'autre grâce à des molécules appelées neurotransmetteurs."
+        }
+      ],
+      "mission": {
+        "titre": "Mission : transmets le signal",
+        "consigne": "Active les neurones dans le bon ordre pour que le signal arrive jusqu'au muscle : neurone sensoriel, neurone relais, puis neurone moteur.",
+        "type": "sequence",
+        "sequence": [
+          {
+            "id": "sensory_neuron",
+            "indice": "Le signal commence là où l'information est captée.",
+            "explication": "Le neurone sensoriel capte l'information et envoie un influx nerveux."
+          },
+          {
+            "id": "relay_neuron",
+            "indice": "Le signal doit être analysé avant de donner un ordre.",
+            "explication": "Le neurone relais reçoit le signal par une synapse et le transmet plus loin."
+          },
+          {
+            "id": "motor_neuron",
+            "indice": "Dernier maillon : celui qui commande le muscle.",
+            "explication": "Le neurone moteur transmet l'ordre au muscle, qui se contracte."
+          }
+        ],
+        "erreurs": {
+          "synapse": "La synapse est la zone entre deux neurones, pas un neurone. Choisis le neurone qui doit s'activer."
+        },
+        "erreurGenerique": "Pas encore : le signal ne passe pas par là à ce moment."
+      },
+      "reussite": {
+        "titre": "Mission réussie !",
+        "texte": "Le signal a voyagé de neurone en neurone jusqu'au muscle. Tu as terminé les trois niveaux !"
+      },
+      "questions": [
+        {
+          "id": "brain_q1",
+          "question": "Comment appelle-t-on la zone où un message passe d'un neurone au suivant ?",
+          "choix": ["La synapse", "L'alvéole", "La valve", "Le capillaire"],
+          "reponse": 0,
+          "explication": "À la synapse, des neurotransmetteurs transmettent le message d'un neurone au suivant."
+        },
+        {
+          "id": "brain_q2",
+          "question": "Quel est le rôle d'un neurone moteur ?",
+          "choix": [
+            "Envoyer un ordre vers un muscle",
+            "Capter la lumière",
+            "Transporter l'oxygène",
+            "Fabriquer du sang"
+          ],
+          "reponse": 0,
+          "explication": "Le neurone moteur porte l'ordre du système nerveux jusqu'au muscle."
+        }
+      ],
+      "sources": [
+        { "titre": "Manuels de SVT (collège et lycée), chapitre sur le système nerveux", "type": "manuel" },
+        { "titre": "Inserm, dossiers d'information : le cerveau", "type": "institution" }
+      ]
+    }
+  ]
+}
