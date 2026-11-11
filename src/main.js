@@ -3,9 +3,10 @@
  *
  * Assemble le moteur et les systèmes, puis charge la scène de départ :
  *   Engine (rendu + boucle) → XRManager (VR) + DesktopControls (bureau)
- *   → Interaction (pointage) → Teleport (déplacement) → BodyScene (corps humain).
+ *   → Interaction (pointage) → Teleport (déplacement)
+ *   → LevelManager : scène du corps humain (« home »), puis niveaux du cœur et des poumons.
  *
- * Ajouter ?test à l'adresse pour charger la scène de test du moteur à la place.
+ * Adresse : ?test pour la scène de test du moteur, ?level=heart ou ?level=lungs pour ouvrir un niveau.
  */
 import { Engine } from './core/Engine.js';
 import { XRManager } from './core/XRManager.js';
@@ -14,6 +15,9 @@ import { Interaction } from './systems/Interaction.js';
 import { Teleport } from './systems/Teleport.js';
 import { createTestScene } from './debug/TestScene.js';
 import { createBodyScene } from './scenes/BodyScene.js';
+import { LevelManager } from './core/LevelManager.js';
+import { HeartLevel } from './levels/HeartLevel.js';
+import { LungsLevel } from './levels/LungsLevel.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
@@ -64,10 +68,32 @@ xr.addEventListener( 'error', () => {
 
 } );
 
-// 5. Scène de départ : le corps humain (ou la scène de test avec ?test dans l'adresse).
-const useTestScene = new URLSearchParams( location.search ).has( 'test' );
-if ( useTestScene ) createTestScene( { engine, interaction, teleport } );
-else createBodyScene( { engine, interaction, teleport } );
+// 5. Scènes et niveaux, gérés par le LevelManager (un seul en mémoire à la fois).
+const levels = new LevelManager( { engine, interaction, teleport } );
+
+// Scène de départ : le corps humain. Sélectionner le cœur lance le niveau 1.
+levels.register( 'home', ( ctx ) => {
+
+	let dispose = null;
+	return {
+		start: () => {
+
+			dispose = createBodyScene( { ...ctx, onOrganSelected: ( organ ) => ctx.levels.load( organ ) } );
+
+		},
+		dispose: () => dispose && dispose()
+	};
+
+} );
+
+// Niveaux (classes de Melek et de Zaineb, basées sur BaseLevel).
+levels.register( 'heart', ( ctx ) => new HeartLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
+levels.register( 'lungs', ( ctx ) => new LungsLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
+
+// Adresse : ?test → scène de test du moteur ; ?level=lungs → ouvre directement un niveau (pour tester).
+const params = new URLSearchParams( location.search );
+if ( params.has( 'test' ) ) createTestScene( { engine, interaction, teleport } );
+else await levels.load( levels.has( params.get( 'level' ) ) ? params.get( 'level' ) : 'home' );
 
 // 6. Compteur d'images/s, seulement en développement (retiré du build).
 if ( import.meta.env.DEV ) {
@@ -79,7 +105,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { engine, xr, desktop, interaction, teleport };
+	window.app = { engine, xr, desktop, interaction, teleport, levels };
 
 }
 
