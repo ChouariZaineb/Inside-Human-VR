@@ -3,7 +3,9 @@
  *
  * Assemble le moteur et les systèmes, puis charge la scène de départ :
  *   Engine (rendu + boucle) → XRManager (VR) + DesktopControls (bureau)
- *   → Interaction (pointage) → Teleport (déplacement) → TestScene.
+ *   → Interaction (pointage) → Teleport (déplacement) → BodyScene (corps humain).
+ *
+ * Ajouter ?test à l'adresse pour charger la scène de test du moteur à la place.
  */
 import { Engine } from './core/Engine.js';
 import { XRManager } from './core/XRManager.js';
@@ -11,6 +13,7 @@ import { DesktopControls } from './core/DesktopControls.js';
 import { Interaction } from './systems/Interaction.js';
 import { Teleport } from './systems/Teleport.js';
 import { createTestScene } from './debug/TestScene.js';
+import { createBodyScene } from './scenes/BodyScene.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
@@ -61,8 +64,10 @@ xr.addEventListener( 'error', () => {
 
 } );
 
-// 5. Scène chargée par défaut (en attendant les niveaux).
-createTestScene( { engine, interaction, teleport } );
+// 5. Scène de départ : le corps humain (ou la scène de test avec ?test dans l'adresse).
+const useTestScene = new URLSearchParams( location.search ).has( 'test' );
+if ( useTestScene ) createTestScene( { engine, interaction, teleport } );
+else createBodyScene( { engine, interaction, teleport } );
 
 // 6. Compteur d'images/s, seulement en développement (retiré du build).
 if ( import.meta.env.DEV ) {
