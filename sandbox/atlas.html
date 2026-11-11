@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le cœur et la circulation</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,"Segoe UI",sans-serif}
+  body{background:radial-gradient(ellipse at 50% 55%,#d6e8ff 0%,#8fbcff 45%,#2f7bff 100%)}
+  canvas{position:fixed;inset:0}
+  .tag{position:fixed;top:18px;left:18px;background:rgba(30,80,170,.75);color:#fff;padding:8px 16px;border-radius:6px;font-size:18px}
+  .caption{position:fixed;right:0;bottom:18px;max-width:340px;background:rgba(235,242,255,.9);color:#12306a;padding:10px 16px;border-radius:6px 0 0 6px;font-size:18px;line-height:1.35}
+  .bar{position:fixed;top:14px;right:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  button{border:0;border-radius:6px;padding:8px 12px;font-size:14px;cursor:pointer;background:rgba(255,255,255,.85);color:#12306a}
+  button.on{background:#12306a;color:#fff}
+  .lbl{position:fixed;transform:translate(-50%,0);background:rgba(30,80,170,.75);color:#fff;padding:3px 10px;border-radius:4px;font-size:15px;pointer-events:none;white-space:nowrap}
+  #hud{position:fixed;bottom:6px;left:10px;font-size:12px;color:#12306a;opacity:.7}
+  #err{position:fixed;left:10px;right:10px;top:70px;z-index:99;background:rgba(150,10,10,.92);color:#fff;font:13px/1.45 ui-monospace,Consolas,monospace;padding:10px 14px;border-radius:6px;white-space:pre-wrap;max-height:55vh;overflow:auto;display:none}
+</style></head>
+<body>
+<div id="err"></div>
+<script>
+  // Diagnostic : affiche toute erreur (import, WebGPU, shader) directement sur la page.
+  (function () {
+    var box = document.getElementById('err'), lines = [];
+    function show(t) { lines.push(String(t).slice(0, 700)); box.style.display = 'block'; box.textContent = lines.slice(-6).join('\n\n'); }
+    window.addEventListener('error', function (e) { show('ERREUR: ' + e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : '')); });
+    window.addEventListener('unhandledrejection', function (e) { show('PROMESSE REJETÉE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason)); });
+    var ce = console.error; console.error = function () { show('console.error: ' + Array.prototype.join.call(arguments, ' ')); ce.apply(console, arguments); };
+    var cw = console.warn; console.warn = function () { var m = Array.prototype.join.call(arguments, ' '); if (/webgpu|shader|wgsl|node/i.test(m)) show('avertissement: ' + m); cw.apply(console, arguments); };
+    setTimeout(function () { if (!document.getElementById('tag').textContent) show("La scène ne s'est pas initialisée après 6 s (aucune erreur levée). Essayez ?webgl à la fin de l'adresse."); }, 6000);
+  })();
+</script>
+<div class="tag" id="tag"></div>
+<div class="bar">
+  <button data-mode="anatomie">Anatomie</button><button data-mode="schema">Schéma</button>
+  <button id="flip">Vue postérieure</button><button id="axis">Axe du cœur</button>
+</div>
+<div class="caption" id="caption"></div>
+<div id="hud"></div>
+<script type="module" src="./atlas.js"></script>
+</body></html>
