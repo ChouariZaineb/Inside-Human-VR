@@ -19,7 +19,7 @@ import { Renderer, EYE_HEIGHT } from './Renderer.js';
 
 /**
  * @callback UpdateCallback
- * @param {number} delta - Temps écoulé depuis l'image précédente (secondes, max 0,1 s).
+ * @param {number} delta - Temps écoulé depuis l'image précédente (secondes, entre 0 et 0,1 s).
  * @param {number} elapsed - Temps écoulé depuis le démarrage du moteur (secondes).
  */
 
@@ -147,7 +147,9 @@ export class Engine extends THREE.EventDispatcher {
 	_loop( timestamp ) {
 
 		this._timer.update( timestamp );
-		const delta = Math.min( this._timer.getDelta(), 0.1 );
+		// Le delta est borné entre 0 et 0,1 s : au premier affichage, l'horodatage du navigateur
+		// peut être légèrement antérieur à reset() (delta négatif), et après une pause il peut être énorme.
+		const delta = THREE.MathUtils.clamp( this._timer.getDelta(), 0, 0.1 );
 		const elapsed = this._timer.getElapsed();
 
 		for ( const callback of this._callbacks ) callback( delta, elapsed );
