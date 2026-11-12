@@ -70,7 +70,7 @@ accessibles dans la console du navigateur via `window.app` (`app.engine`, `app.t
   L'image WebGPU est donc seulement **copiée** dans la couche (`texImage2D` + `blitFramebuffer`) : WebGL ne dessine rien.
 - **Interactions** : sélection (gâchette / clic gauche) et **saisie** d'objets (bouton grip / clic droit maintenu).
 - **PWA** : `manifest.webmanifest`, Service Worker `sw.js` (fonctionne hors ligne), icônes, enregistrement dans `src/pwa.js`
-  (voir `docs/PWA.md`).
+  (voir `docs/MOTEUR_VR.md`, section 14, et `docs/ARCHITECTURE.md`, section 8).
 
 Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les addons de Three.js importent `'three'` :
 `vite.config.js` redirige `'three'` vers `'three/webgpu'`.
@@ -90,13 +90,12 @@ Inside-Human-VR/
 │   ├── ARCHITECTURE.md         Architecture générale                     → Zaineb
 │   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
 │   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
-│   ├── PWA.md                  Progressive Web App (manifeste, Service Worker) → Melek
 │   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
 ├── sandbox/                  Pages d'essai des visuels (xray, atlas)     → Yessmine
 ├── src/
 │   ├── main.js               Assemble le moteur, les systèmes et la scène → Zaineb
-│   ├── pwa.js                Enregistrement du Service Worker (PWA)      → Melek
+│   ├── pwa.js                Enregistrement du Service Worker (PWA)      → Zaineb
 │   ├── core/                 Moteur                                      → Zaineb
 │   │   ├── Engine.js           API centrale (scene, camera, player, onUpdate, isVR)
 │   │   ├── Renderer.js         WebGPURenderer, scène, caméra, lumières, rendu stéréo
@@ -110,6 +109,7 @@ Inside-Human-VR/
 │   │   └── TestScene.js        Scène de test du moteur (?test)           → Zaineb
 │   ├── systems/
 │   │   ├── Interaction.js      Pointage et sélection (manette ou souris) → Zaineb
+│   │   ├── Manipulation.js     Joysticks : snap turn, rotation et distance de l'objet tenu → Zaineb
 │   │   ├── Teleport.js         Points de téléportation, fondu au noir    → Zaineb
 │   │   ├── XrayBody.js         Corps humain « radio » (modèle 3D)        → Yessmine
 │   │   ├── ProceduralHeart.js  Cœur anatomique généré par code           → Yessmine
@@ -121,9 +121,9 @@ Inside-Human-VR/
 │   ├── levels/               BaseLevel, HeartLevel → Melek ; LungsLevel → Zaineb
 │   └── data/                 GameState (machine à états, score)          → Melek
 └── public/
-    ├── manifest.webmanifest  Manifeste de la PWA (nom, icônes, affichage) → Melek
-    ├── sw.js                 Service Worker : cache et hors ligne        → Melek
-    ├── icons/                Icônes de l'application                     → Melek
+    ├── manifest.webmanifest  Manifeste de la PWA (nom, icônes, affichage) → Zaineb
+    ├── sw.js                 Service Worker : cache et hors ligne        → Zaineb
+    ├── icons/                Icônes de l'application                     → Zaineb
     └── assets/
     ├── models/               Modèles GLB (si besoin)                     → Yessmine
     ├── audio/                Sons (CC0)                                  → Yessmine
@@ -275,7 +275,8 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | Documentation de `LevelManager` et `LungsLevel` dans `docs/MOTEUR_VR.md` | Fait |
 | 2026-11-14 | Hentati Yessmine | `feature/visuels-poumons-cerveau` | Respiration, changement de couleur du sang, shader `neuronSignal.js`, `AudioManager.js` | À faire |
 | 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.js`, `Storage.js` (IndexedDB), déblocage des niveaux, écran d'accueil final, tests de progression (PR #9) | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | VR avec l'API WebXR Device rendue en WebGPU : `XRPresenter.js` (ArrayCamera, copie vers `XRWebGLLayer`), `XRManager.js` (session, `inputSources`, `getPose`) | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | Saisie d'objets : grip en VR, clic droit en bureau (`Interaction.js`) ; molécules à déposer (`LungsLevel`), cœur à sortir du corps (`BodyScene`) | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
-| 2026-11-12 | Malouli Melek | `feature/pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.js` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.js`, `docs/PWA.md` | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | VR avec l'API WebXR Device rendue en WebGPU : `XRPresenter.js` (ArrayCamera, copie vers `XRWebGLLayer`), `XRManager.js` (session, `inputSources`, `getPose`), WebGPU obligatoire | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Saisie d'objets : grip en VR, clic droit en bureau (`Interaction.js`) ; molécules à déposer (`LungsLevel`), cœur à sortir du corps (`BodyScene`) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.js` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.js` | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/interactivite-vr` | Retour haptique (vibration des manettes), `Manipulation.js` : rotation sur soi par paliers, rotation et distance de l'objet tenu (joystick, molette, Q / E) | Fait |
