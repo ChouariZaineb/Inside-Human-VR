@@ -23,10 +23,15 @@ import { BrainLevel } from './levels/BrainLevel.js';
 import { gameState } from './data/GameState.js';
 import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
-import { registerServiceWorker } from './pwa.js';
+import { registerServiceWorker, initNetworkBadge, initInstallButton } from './pwa.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
+
+// PWA : badge de connexion et bouton d'installation, dès le début (l'événement d'installation
+// peut arriver tôt, et le badge doit rester visible même si WebGPU manque).
+initNetworkBadge();
+initInstallButton();
 
 // 1. Moteur
 const engine = new Engine( document.getElementById( 'app' ) );
