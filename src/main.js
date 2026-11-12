@@ -40,7 +40,7 @@ function updateProgressSummary() {
 	const names = { heart: 'Cœur', lungs: 'Poumons', brain: 'Cerveau' };
 	const ids = Object.keys( names );
 	const completed = ids.filter( ( id ) => Boolean( gameState.results[ id ] ) ).length;
-	summary.textContent = `${completed} / 3 missions réussies · Progression enregistrée sur cet appareil`;
+	summary.textContent = `${completed} / 3 missions réussies · Progression locale`;
 	for ( const id of ids ) {
 		const indicator = document.querySelector( `[data-progress-level=\"${id}\"]` );
 		if ( ! indicator ) continue;
