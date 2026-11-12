@@ -67,7 +67,12 @@ test.describe( 'PWA (version de production)', () => {
 		await expect( page.locator( '#app canvas' ) ).toBeVisible( { timeout: 30_000 } );
 		expect( await page.evaluate( () => navigator.onLine ) ).toBe( false );
 
+		// Le badge de connexion l'indique à l'utilisateur.
+		await expect( page.locator( '#net-badge' ) ).toHaveAttribute( 'data-state', 'offline' );
+		await expect( page.locator( '#net-label' ) ).toHaveText( 'Hors ligne · mode cache' );
+
 		await context.setOffline( false );
+		await expect( page.locator( '#net-badge' ) ).toHaveAttribute( 'data-state', 'online' );
 
 	} );
 

@@ -299,3 +299,5 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Tests de bout en bout Playwright + iwer (casque Meta Quest 3 simulé) : 11 scénarios (WebGPU, session VR, gâchette, grip, joystick, snap turn, mission des poumons, PWA hors ligne) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Correction trouvée par les tests : places d'arrivée du CO₂ hors de la zone de dépôt de l'alvéole (`LungsLevel`) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | `docs/TESTS.md` : stratégie de tests et scénarios | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/pwa-badge` | PWA visible : badge de connexion (« En ligne » / « Hors ligne · mode cache »), bouton « Installer l'application » (`beforeinstallprompt`), test automatique du badge ; section PWA rétablie dans `MOTEUR_VR.md` | Fait |
+

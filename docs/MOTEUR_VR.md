@@ -18,6 +18,7 @@ Ce document explique chaque fichier du moteur : ce qu'il fait, comment il le fai
 | `src/core/LevelManager.js` | Charge un niveau à la fois et passe de l'un à l'autre |
 | `src/levels/LungsLevel.js` | Le niveau 2 : les poumons et les échanges gazeux |
 | `src/debug/TestScene.js` | Une scène de test du moteur, sans modèle |
+| `src/pwa.js`, `public/sw.js`, `public/manifest.webmanifest` | La Progressive Web App : installation, hors ligne, badge de connexion |
 
 ---
 
@@ -218,6 +219,25 @@ Il fait le lien entre la session WebXR et le `WebGPURenderer`.
 
 **Avec l'émulateur** : la taille de l'image peut changer après le démarrage (l'émulateur adapte le canvas à la fenêtre) ; elle est relue à chaque image.
 
+## 14. La Progressive Web App (PWA)
+
+| Fichier | Rôle |
+|---|---|
+| `public/manifest.webmanifest` | Nom, description, icônes (192, 512, maskable), couleurs, `display: standalone`, `start_url` et `scope` relatifs (`./`) : l'application est **installable** |
+| `public/sw.js` | Le **Service Worker** : à l'installation, il range la coquille de l'application ; ensuite, stratégie « **réseau d'abord, cache en secours** » : chaque fichier téléchargé est copié dans le cache, et hors ligne il est servi depuis le cache |
+| `src/pwa.js` | `navigator.serviceWorker.register('./sw.js')`, envoi au Service Worker des fichiers déjà chargés (`performance.getEntriesByType('resource')`), badge de connexion, bouton d'installation |
+| `index.html` | `<link rel="manifest">`, icônes, `theme-color`, badge de connexion, bouton d'installation |
+
+**Ce que voit l'utilisateur** :
+- un **badge de connexion**, toujours visible en haut de l'écran : vert « En ligne », ou **orange clignotant « Hors ligne · mode cache »** (événements `online` et `offline` du navigateur, `navigator.onLine`) ;
+- un bouton **« Installer l'application »** : quand l'application est installable, le navigateur émet `beforeinstallprompt`. On garde cet événement (`preventDefault()`) et on affiche le bouton ; au clic, `prompt()` ouvre la fenêtre d'installation du navigateur. Le bouton disparaît une fois l'application installée (`appinstalled`, ou `display-mode: standalone`).
+
+Deux détails techniques :
+- `ignoreVary: true` dans `caches.match` : les scripts de Vite sont chargés avec l'attribut `crossorigin`, donc avec un en-tête `Origin` que n'avaient pas les copies rangées à l'installation.
+- Le nom du cache contient une version (`inside-human-vr-v2`) : à chaque changement de version, l'activation supprime les anciens caches.
+
+**Vérifier** : `npm run build` puis `npm run preview`, Chrome → F12 → onglet **Application** → *Manifest* (nom, icônes) et *Service Workers* (activé). Cocher **Offline**, recharger : l'application démarre, et le badge passe à « Hors ligne · mode cache ». Le test automatique `tests/e2e/pwa.spec.js` vérifie la même chose.
+
 ## 15. Interactivité avancée : vibrations et joysticks
 
 **Retour haptique (`XRManager.pulse`)** : chaque manette WebXR expose un `gamepad` (API Gamepad). Sa méthode `hapticActuators[0].pulse(intensité, durée)` la fait vibrer. `Interaction` l'appelle :
@@ -250,6 +270,8 @@ Une zone morte de 0,15 ignore les petits mouvements involontaires du joystick.
 | TSL | Langage de shaders de Three.js, écrit en JavaScript, traduit en WGSL ou en GLSL |
 | WebXR Device API | API du navigateur pour la réalité virtuelle et augmentée (session, poses, manettes) |
 | `XRWebGLLayer` | Couche par laquelle WebXR affiche une image dans le casque |
+| Service Worker | Script qui intercepte les requêtes de la page : cache et fonctionnement hors ligne |
+| Manifeste | Fichier JSON qui décrit une PWA (nom, icônes, affichage) pour l'installer |
 | Retour haptique | Vibration de la manette pour confirmer une action |
 | Snap turn | Rotation sur soi par paliers (ici 30°), plus confortable qu'une rotation continue |
 | `ArrayCamera` | Caméra de Three.js qui regroupe plusieurs sous-caméras (ici, une par œil) |
