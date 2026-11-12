@@ -38,7 +38,8 @@ export default defineConfig( {
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
 	workers: 1,
-	retries: 0,
+	// En CI, un test qui échoue est relancé une fois ; Playwright le signale alors comme « flaky » (instable) dans le rapport.
+	retries: process.env.CI ? 1 : 0,
 	reporter: [ [ 'list' ], [ 'html', { open: 'never' } ] ],
 
 	use: {
