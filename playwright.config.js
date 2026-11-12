@@ -33,7 +33,8 @@ if ( linux ) args.push( '--enable-features=Vulkan', '--use-vulkan=swiftshader', 
 
 export default defineConfig( {
 	testDir: './tests/e2e',
-	timeout: 60_000,
+	// Plus de temps sur les serveurs d'intégration continue (2 processeurs, WebGPU en rendu logiciel).
+	timeout: process.env.CI ? 180_000 : 90_000,
 	expect: { timeout: 15_000 },
 	fullyParallel: false,
 	workers: 1,

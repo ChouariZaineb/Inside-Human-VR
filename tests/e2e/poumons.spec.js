@@ -69,6 +69,9 @@ test.describe( 'Niveau des poumons en VR', () => {
 
 	test( 'déposer les 6 molécules au bon endroit termine la mission avec 100 points', async ( { page } ) => {
 
+		// Scénario long : 6 molécules portées une par une, avec leurs animations (0,8 s chacune).
+		test.setTimeout( 240_000 );
+
 		for ( let i = 0; i < 6; i ++ ) {
 
 			const zone = await page.evaluate( ( i ) => window.app.levels.current.molecules[ i ].kind.vers, i );
