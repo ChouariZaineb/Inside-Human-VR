@@ -50,14 +50,18 @@ test.describe( 'PWA (version de production)', () => {
 			return Boolean( registration && registration.active );
 
 		} );
+		// On attend que TOUS les fichiers chargés par la page (scripts, modèles, textures…) soient
+		// dans le cache, et pas seulement la coquille : sinon, sur un serveur lent, on coupe le réseau
+		// avant que le Service Worker ait fini de ranger le code JavaScript.
 		await expect.poll( () => page.evaluate( async () => {
 
-			const names = await caches.keys();
-			let count = 0;
-			for ( const name of names ) count += ( await ( await caches.open( name ) ).keys() ).length;
-			return count;
+			const urls = [ location.href, ...performance.getEntriesByType( 'resource' ).map( ( entry ) => entry.name ) ]
+				.filter( ( url ) => new URL( url ).origin === location.origin );
+			let missing = 0;
+			for ( const url of urls ) if ( ! await caches.match( url, { ignoreVary: true, ignoreSearch: true } ) ) missing ++;
+			return missing;
 
-		} ), { timeout: 20_000 } ).toBeGreaterThan( 5 );
+		} ), { timeout: 30_000 } ).toBe( 0 );
 
 		// Coupure du réseau, puis rechargement.
 		await context.setOffline( true );
