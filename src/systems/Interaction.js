@@ -9,6 +9,9 @@
  * Saisir (grab) : l'objet visé est accroché à la manette (ou à la caméra en bureau),
  * suit la main, puis est rendu à la scène quand on relâche, à l'endroit où on l'a lâché.
  *
+ * Retour haptique en VR : la manette vibre quand son rayon arrive sur un objet,
+ * à la sélection, à la saisie et au lâcher.
+ *
  * @example
  * interaction.addSelectable( mesh, {
  *   onHover: ( { hovered } ) => console.log( hovered ? 'survol' : 'fin du survol' ),
@@ -77,6 +80,9 @@ export class Interaction {
 		/** Objets tenus : id du pointeur → { object, parent, holder }. @private */
 		this._held = new Map();
 
+		/** Objet visé à l'image précédente, par pointeur (pour vibrer à l'arrivée sur un objet). @private */
+		this._previousHit = new Map();
+
 		// Les deux stratégies d'entrée déclenchent la même sélection et la même saisie.
 		xr.addEventListener( 'select', ( event ) => this._select( 'vr-' + event.controller.userData.index, 'vr' ) );
 		desktop.addEventListener( 'select', () => this._select( 'desktop', 'desktop' ) );
@@ -143,6 +149,11 @@ export class Interaction {
 
 			// En VR, le rayon visible s'arrête sur l'objet touché.
 			if ( pointer.line ) pointer.line.scale.z = hit ? hit.distance : RAY_LENGTH;
+
+			// Petite vibration quand le rayon arrive sur un nouvel objet.
+			const object = hit ? hit.object : null;
+			if ( object && object !== this._previousHit.get( pointer.id ) ) this._vibrate( pointer.id, 0.15, 15 );
+			this._previousHit.set( pointer.id, object );
 
 		}
 
@@ -256,6 +267,8 @@ export class Interaction {
 		const hit = this._hits.get( pointerId );
 		if ( ! hit ) return;
 
+		this._vibrate( pointerId, 0.6, 50 );
+
 		const options = this._selectables.get( hit.object );
 		if ( options && options.onSelect ) options.onSelect( { object: hit.object, point: hit.point, source } );
 
@@ -279,6 +292,7 @@ export class Interaction {
 		const object = hit.object;
 		this._held.set( pointerId, { object, parent: object.parent } );
 		holder.attach( object );
+		this._vibrate( pointerId, 0.8, 70 );
 
 		if ( options.onGrab ) options.onGrab( { object, source } );
 
@@ -296,6 +310,7 @@ export class Interaction {
 
 		const { object, parent } = held;
 		if ( parent ) parent.attach( object );
+		this._vibrate( pointerId, 0.3, 30 );
 
 		const options = this._selectables.get( object );
 		if ( notify && options && options.onRelease ) {
@@ -303,6 +318,29 @@ export class Interaction {
 			options.onRelease( { object, position: object.getWorldPosition( new THREE.Vector3() ), source } );
 
 		}
+
+	}
+
+	/**
+	 * Objet tenu par un pointeur ('vr-0', 'vr-1' ou 'desktop'), ou null.
+	 * @param {string} pointerId
+	 * @returns {?THREE.Object3D}
+	 */
+	getHeld( pointerId ) {
+
+		const held = this._held.get( pointerId );
+		return held ? held.object : null;
+
+	}
+
+	/**
+	 * Fait vibrer la manette d'un pointeur VR (sans effet en mode bureau).
+	 * @private
+	 */
+	_vibrate( pointerId, intensity, duration ) {
+
+		if ( ! pointerId.startsWith( 'vr-' ) ) return;
+		this.xr.pulse( this.xr.controllers[ Number( pointerId.slice( 3 ) ) ], intensity, duration );
 
 	}
 
