@@ -55,6 +55,18 @@ accessibles dans la console du navigateur via `window.app` (`app.engine`, `app.t
 
 ---
 
+### Tests
+
+```
+npm test                 # tests unitaires (progression, Melek)
+npm run test:e2e         # 11 tests de bout en bout : WebGPU, VR simulée (Meta Quest 3), interactions, PWA hors ligne
+npm run test:e2e:report  # rapport HTML du dernier passage
+```
+
+Détails : [`docs/TESTS.md`](docs/TESTS.md).
+
+---
+
 ## 2. Choix technique : WebGPU, WebXR et PWA
 
 **Tout le rendu se fait avec le `WebGPURenderer` de Three.js, en mode bureau comme en VR.**
@@ -83,6 +95,7 @@ Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les
 Inside-Human-VR/
 ├── index.html                Page d'accueil (provisoire)                 → Zaineb, puis Melek
 ├── styles.css                Styles de la page                           → Zaineb, puis Melek
+├── playwright.config.js      Configuration des tests de bout en bout     → Zaineb
 ├── vite.config.js            Configuration Vite (alias three/webgpu, HTTPS local) → Zaineb, Yessmine
 ├── README.md                 Présentation, API du moteur, journal des tâches
 ├── CREDITS.md, ATTRIBUTION.md Licences des ressources                    → Yessmine
@@ -90,6 +103,7 @@ Inside-Human-VR/
 │   ├── ARCHITECTURE.md         Architecture générale                     → Zaineb
 │   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
 │   ├── PIPELINE_XR.md          Formalisation mathématique du moteur      → Zaineb
+│   ├── TESTS.md                Stratégie de tests (unitaires, bout en bout) → Zaineb
 │   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
 │   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
@@ -282,3 +296,6 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/interactivite-vr` | Retour haptique (vibration des manettes), `Manipulation.js` : rotation sur soi par paliers, rotation et distance de l'objet tenu (joystick, molette, Q / E) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/pipeline-maths` | `docs/PIPELINE_XR.md` : formalisation mathématique du moteur (poses WebXR, matrices de vue et de projection, raycasting, saisie, téléportation, snap turn, interpolations, zones de dépôt) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Tests de bout en bout Playwright + iwer (casque Meta Quest 3 simulé) : 11 scénarios (WebGPU, session VR, gâchette, grip, joystick, snap turn, mission des poumons, PWA hors ligne) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Correction trouvée par les tests : places d'arrivée du CO₂ hors de la zone de dépôt de l'alvéole (`LungsLevel`) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | `docs/TESTS.md` : stratégie de tests et scénarios | Fait |
