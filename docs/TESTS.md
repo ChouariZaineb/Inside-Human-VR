@@ -33,7 +33,7 @@ Le projet a deux niveaux de tests :
 | `poumons.spec.js` | Déposer les **6 molécules** au bon endroit termine la mission avec **100 points** et un sang **rouge** | EF-07, EF-09 |
 | `poumons.spec.js` | Une molécule lâchée **hors des zones** retourne à sa place sans changer le score | EF-07 |
 | `pwa.spec.js` | Le manifeste décrit une application **installable** (nom, `standalone`, icônes 192 et 512 accessibles) | ENF-04 |
-| `pwa.spec.js` | Après une première visite, l'application **démarre hors ligne** | ENF-04 |
+| `pwa.spec.js` | Après une première visite, l'application **démarre hors ligne**, et le badge affiche « Hors ligne · mode cache » | ENF-04 |
 
 ## 3. Lancer les tests
 

@@ -22,6 +22,8 @@
         <span class="brand-mark" aria-hidden="true">✦</span>
         <span class="brand-name">INSIDE HUMAN <strong>VR</strong></span>
         <span class="brand-tag">EXPÉRIENCE PÉDAGOGIQUE</span>
+        <!-- PWA : bouton d'installation, affiché seulement quand le navigateur le propose (src/pwa.js) -->
+        <button id="btn-install" class="install-button" type="button" hidden>Installer l'application</button>
       </header>
 
       <div class="welcome-grid">
@@ -76,6 +78,10 @@
   </main>
 
   <div id="reticle" hidden aria-hidden="true"></div>
+  <!-- PWA : état de la connexion, toujours visible (mis à jour par src/pwa.js) -->
+  <div id="net-badge" class="net-badge" data-state="online" role="status" aria-live="polite">
+    <span class="net-dot" aria-hidden="true"></span><span id="net-label">En ligne</span>
+  </div>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
