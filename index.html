@@ -6,7 +6,11 @@
   <meta name="theme-color" content="#081325" />
   <meta name="description" content="Inside Human VR, trois missions immersives pour comprendre le cœur, les poumons et le cerveau, sans casque obligatoire." />
   <title>Inside Human VR — Voyage dans le corps humain</title>
-  <link rel="icon" href="data:," />
+  <!-- Progressive Web App : manifeste et icônes (le Service Worker est enregistré par src/pwa.js) -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -64,9 +68,9 @@
       </div>
 
       <footer class="welcome-footer">
-        <span><strong>Bureau :</strong> souris pour regarder · clic pour sélectionner</span>
+        <span><strong>Bureau :</strong> souris pour regarder · clic pour sélectionner · clic droit maintenu pour saisir</span>
         <span><strong>Déplacements :</strong> points de téléportation ou touches 1–3 · Échap pour revenir</span>
-        <span><strong>VR :</strong> casque ou Immersive Web Emulator</span>
+        <span><strong>VR :</strong> gâchette pour sélectionner · grip pour saisir</span>
       </footer>
     </div>
   </main>
