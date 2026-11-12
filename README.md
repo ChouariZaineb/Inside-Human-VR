@@ -1,5 +1,10 @@
 # Inside Human VR
 
+[![CI](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci.yml/badge.svg)](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci.yml)
+[![Déploiement](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/deploy.yml/badge.svg)](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/deploy.yml)
+
+**Démo en ligne : https://chouarizaineb.github.io/Inside-Human-VR/** (Chrome ou Edge récent, WebGPU obligatoire)
+
 Voyage immersif à l'intérieur du corps humain : une application éducative en réalité virtuelle
 (WebXR + Three.js `WebGPURenderer`), projet SUP'COM Cycle Ingénieur.
 
@@ -63,7 +68,8 @@ npm run test:e2e         # 11 tests de bout en bout : WebGPU, VR simulée (Meta 
 npm run test:e2e:report  # rapport HTML du dernier passage
 ```
 
-Détails : [`docs/TESTS.md`](docs/TESTS.md).
+Détails : [`docs/TESTS.md`](docs/TESTS.md). Ces tests sont aussi lancés **automatiquement par GitHub Actions** à chaque push
+et à chaque pull request, et chaque fusion dans `main` met l'application en ligne : voir [`docs/CI_CD.md`](docs/CI_CD.md).
 
 ---
 
@@ -95,6 +101,7 @@ Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les
 Inside-Human-VR/
 ├── index.html                Page d'accueil (provisoire)                 → Zaineb, puis Melek
 ├── styles.css                Styles de la page                           → Zaineb, puis Melek
+├── .github/workflows/        CI (ci.yml) et déploiement GitHub Pages (deploy.yml) → Zaineb
 ├── playwright.config.js      Configuration des tests de bout en bout     → Zaineb
 ├── vite.config.js            Configuration Vite (alias three/webgpu, HTTPS local) → Zaineb, Yessmine
 ├── README.md                 Présentation, API du moteur, journal des tâches
@@ -104,6 +111,7 @@ Inside-Human-VR/
 │   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
 │   ├── PIPELINE_XR.md          Formalisation mathématique du moteur      → Zaineb
 │   ├── TESTS.md                Stratégie de tests (unitaires, bout en bout) → Zaineb
+│   ├── CI_CD.md                Intégration et déploiement continus        → Zaineb
 │   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
 │   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
@@ -300,4 +308,5 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Correction trouvée par les tests : places d'arrivée du CO₂ hors de la zone de dépôt de l'alvéole (`LungsLevel`) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | `docs/TESTS.md` : stratégie de tests et scénarios | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/pwa-badge` | PWA visible : badge de connexion (« En ligne » / « Hors ligne · mode cache »), bouton « Installer l'application » (`beforeinstallprompt`), test automatique du badge ; section PWA rétablie dans `MOTEUR_VR.md` | Fait |
-
+| 2026-11-12 | Chouari Zaineb | `feature/ci-cd` | Intégration continue (GitHub Actions, `ci.yml`) : installation, tests unitaires, build et 11 tests de bout en bout à chaque push et pull request | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/ci-cd` | Déploiement continu (`deploy.yml`) : publication automatique sur GitHub Pages (HTTPS) à chaque fusion dans `main` ; `docs/CI_CD.md` ; badges et lien de démo | Fait |
