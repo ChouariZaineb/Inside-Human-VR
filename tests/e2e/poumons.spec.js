@@ -19,9 +19,27 @@ const LEVEL = 'window.app.levels.current';
  */
 async function carryMolecule( page, i, zone ) {
 
-	const start = await worldPosition( page, `${LEVEL}.molecules[ ${i} ].group` );
-	await aim( page, 'right', start );
-	await setButton( page, 'right', 'squeeze', 1 );
+	// Les molécules flottent (elles montent et descendent de 4 cm) : sur un serveur lent,
+	// la molécule a pu bouger entre le moment où on vise et celui où on appuie.
+	// Comme un vrai joueur, on vérifie qu'on la tient, sinon on relâche, on revise et on réessaie.
+	let start;
+	for ( let attempt = 0; attempt < 5; attempt ++ ) {
+
+		start = await worldPosition( page, `${LEVEL}.molecules[ ${i} ].group` );
+		await aim( page, 'right', start );
+		await setButton( page, 'right', 'squeeze', 1 );
+		const held = await page.evaluate( ( i ) => {
+
+			const level = window.app.levels.current;
+			return level.held === level.molecules[ i ];
+
+		}, i );
+		if ( held ) break;
+		await setButton( page, 'right', 'squeeze', 0 );
+
+	}
+	// Position réelle au moment de la saisie : c'est elle qui se déplacera avec la manette.
+	start = await worldPosition( page, `${LEVEL}.molecules[ ${i} ].group` );
 
 	// Place libre dans la zone : on déplace la manette du même vecteur que la molécule doit parcourir.
 	const target = await page.evaluate( ( [ zone, i ] ) => {
@@ -34,7 +52,14 @@ async function carryMolecule( page, i, zone ) {
 	}, [ zone, i ] );
 	await moveController( page, 'right', [ target[ 0 ] - start[ 0 ], target[ 1 ] - start[ 1 ], target[ 2 ] - start[ 2 ] ] );
 	await setButton( page, 'right', 'squeeze', 0 );
-	await page.waitForTimeout( 1000 ); // animation de traversée (0,8 s)
+
+	// On attend que la molécule soit vraiment arrivée, au lieu d'un délai fixe :
+	// l'animation avance image par image, et sur un serveur CI sans carte graphique
+	// il y a peu d'images par seconde, donc 0,8 s d'animation peut durer plusieurs secondes.
+	await expect.poll(
+		() => page.evaluate( ( i ) => window.app.levels.current.molecules[ i ].done, i ),
+		{ timeout: 30_000 }
+	).toBe( true );
 
 	// La manette revient à sa position de départ pour la molécule suivante.
 	await moveController( page, 'right', [ start[ 0 ] - target[ 0 ], start[ 1 ] - target[ 1 ], start[ 2 ] - target[ 2 ] ] );
@@ -69,12 +94,18 @@ test.describe( 'Niveau des poumons en VR', () => {
 
 	test( 'déposer les 6 molécules au bon endroit termine la mission avec 100 points', async ( { page } ) => {
 
+		// Scénario long : 6 molécules portées une par une, avec leurs animations (0,8 s chacune).
+		test.setTimeout( 240_000 );
+
 		for ( let i = 0; i < 6; i ++ ) {
 
 			const zone = await page.evaluate( ( i ) => window.app.levels.current.molecules[ i ].kind.vers, i );
 			await carryMolecule( page, i, zone );
 
 		}
+
+		// La mission se termine quand la dernière molécule est arrivée.
+		await expect.poll( () => page.evaluate( () => window.app.levels.current.gameState.phase ), { timeout: 30_000 } ).toBe( 'result' );
 
 		const result = await page.evaluate( () => {
 

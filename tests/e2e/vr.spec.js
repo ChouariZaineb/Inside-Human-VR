@@ -74,11 +74,15 @@ test.describe( 'Réalité virtuelle (casque Meta Quest 3 simulé)', () => {
 		expect( held ).toBe( true );
 
 		const before = await page.evaluate( () => window.app.interaction.getHeld( 'vr-1' ).rotation.y );
+		// Joystick poussé : le cœur tourne tant qu'on le maintient (vitesse × temps de chaque image).
+		// Sur un serveur CI lent, il y a peu d'images par seconde : au lieu d'un délai fixe,
+		// on attend que la rotation dépasse 0,3 rad (environ 17°), avec 20 s au maximum.
 		await thumbstick( page, 'right', 0.9, 0 );
-		await page.waitForTimeout( 500 );
+		await expect.poll(
+			() => page.evaluate( ( before ) => Math.abs( window.app.interaction.getHeld( 'vr-1' ).rotation.y - before ), before ),
+			{ timeout: 20_000 }
+		).toBeGreaterThan( 0.3 );
 		await thumbstick( page, 'right', 0, 0 );
-		const after = await page.evaluate( () => window.app.interaction.getHeld( 'vr-1' ).rotation.y );
-		expect( Math.abs( after - before ) ).toBeGreaterThan( 0.3 );
 
 		await setButton( page, 'right', 'squeeze', 0 );
 		expect( await page.evaluate( () => window.app.interaction.getHeld( 'vr-1' ) ) ).toBe( null );

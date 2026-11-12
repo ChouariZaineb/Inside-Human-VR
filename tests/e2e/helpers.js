@@ -90,7 +90,7 @@ export async function aim( page, hand, target ) {
 		controller.quaternion.set( q.x, q.y, q.z, q.w );
 
 	}, [ hand, target ] );
-	await page.waitForTimeout( 300 );
+	await waitFrames( page );
 
 }
 
@@ -117,7 +117,7 @@ export async function press( page, hand, button ) {
 export async function setButton( page, hand, button, value ) {
 
 	await page.evaluate( ( [ hand, button, value ] ) => window.__xrDevice.controllers[ hand ].updateButtonValue( button, value ), [ hand, button, value ] );
-	await page.waitForTimeout( 300 );
+	await waitFrames( page );
 
 }
 
@@ -135,7 +135,7 @@ export async function moveController( page, hand, delta ) {
 		c.position.set( c.position.x + d[ 0 ], c.position.y + d[ 1 ], c.position.z + d[ 2 ] );
 
 	}, [ hand, delta ] );
-	await page.waitForTimeout( 300 );
+	await waitFrames( page );
 
 }
 
@@ -149,6 +149,35 @@ export async function moveController( page, hand, delta ) {
 export async function thumbstick( page, hand, x, y ) {
 
 	await page.evaluate( ( [ hand, x, y ] ) => window.__xrDevice.controllers[ hand ].updateAxes( 'thumbstick', x, y ), [ hand, x, y ] );
-	await page.waitForTimeout( 300 );
+	await waitFrames( page );
+
+}
+
+/**
+ * Attend que l'application ait affiché quelques images VR.
+ * Un délai fixe (300 ms) ne suffit pas sur un serveur CI sans carte graphique :
+ * il y a peu d'images par seconde, et une action (viser, appuyer, déplacer)
+ * n'est prise en compte qu'à l'image suivante. On compte donc les images, pas le temps.
+ * @param {import('@playwright/test').Page} page
+ * @param {number} [count=3] - Nombre d'images à attendre.
+ */
+export async function waitFrames( page, count = 3 ) {
+
+	await page.evaluate( ( count ) => new Promise( ( resolve ) => {
+
+		const presenter = window.app.xr.presenter;
+		if ( ! window.app.engine.isVR() ) return setTimeout( resolve, 300 );
+
+		let seen = 0;
+		const onFrame = () => {
+
+			if ( ++ seen < count ) return;
+			presenter.removeEventListener( 'frame', onFrame );
+			resolve();
+
+		};
+		presenter.addEventListener( 'frame', onFrame );
+
+	} ), count );
 
 }
