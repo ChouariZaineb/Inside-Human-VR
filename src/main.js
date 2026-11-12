@@ -41,6 +41,13 @@ function updateProgressSummary() {
 	const ids = Object.keys( names );
 	const completed = ids.filter( ( id ) => Boolean( gameState.results[ id ] ) ).length;
 	summary.textContent = `${completed} / 3 missions réussies · Progression locale`;
+	const nextLevel = ids.find( ( id ) => gameState.isUnlocked( id ) && ! gameState.results[ id ] );
+	const resumeButton = document.getElementById( 'btn-resume' );
+	if ( resumeButton ) {
+		resumeButton.hidden = completed === 0 || ! nextLevel;
+		resumeButton.dataset.level = nextLevel ?? '';
+		if ( nextLevel ) resumeButton.textContent = `Reprendre : ${names[ nextLevel ]}`;
+	}
 	for ( const id of ids ) {
 		const indicator = document.querySelector( `[data-progress-level=\"${id}\"]` );
 		if ( ! indicator ) continue;
@@ -118,6 +125,18 @@ levels.register( 'home', ( ctx ) => {
 levels.register( 'heart', ( ctx ) => new HeartLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
 levels.register( 'lungs', ( ctx ) => new LungsLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
 levels.register( 'brain', ( ctx ) => new BrainLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
+
+// Reprendre directement le premier niveau débloqué et non encore terminé.
+// La capture de la souris doit venir du clic, pas d'une continuation asynchrone.
+document.getElementById( 'btn-resume' ).addEventListener( 'click', () => {
+	const id = document.getElementById( 'btn-resume' ).dataset.level;
+	if ( ! id || ! gameState.isUnlocked( id ) ) return;
+	levels.load( id ).catch( ( error ) => {
+		status.textContent = `Impossible de reprendre le niveau : ${error.message}`;
+		desktop.unlock();
+	} );
+	desktop.lock();
+} );
 
 // Adresse : ?test → scène de test du moteur ; ?level=lungs → ouvre directement un niveau (pour tester).
 const params = new URLSearchParams( location.search );
