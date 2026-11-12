@@ -55,21 +55,25 @@ accessibles dans la console du navigateur via `window.app` (`app.engine`, `app.t
 
 ---
 
-## 2. Choix technique : WebGPU et VR
+## 2. Choix technique : WebGPU, WebXR et PWA
 
-- Tout le code utilise l'API `three/webgpu` (`WebGPURenderer`), sans aucun WebGL ni GLSL écrit à la main.
-- Three.js r187 sait faire de la XR native en WebGPU, mais seulement si le navigateur expose
-  `XRGPUBinding` (feature de session `"webgpu"`), ce qui n'est pas encore le cas de Chrome + Immersive Web Emulator.
-- On suit donc l'exemple officiel `webgpu_xr_cubes.html` : `setupWebGLXRFallback` remplace, au moment
-  d'entrer en VR, le renderer par un `WebGPURenderer({ forceWebGL: true })`. En mode bureau, le rendu reste en WebGPU.
+**Tout le rendu se fait avec le `WebGPURenderer` de Three.js, en mode bureau comme en VR.**
 
-Conséquences pour l'équipe :
+- **WebGPU** : la scène est dessinée par WebGPU (shaders TSL compilés en WGSL), aucun WebGL ni GLSL écrit à la main.
+  WebGPU est **obligatoire** : sans WebGPU, l'application affiche un message au lieu de passer en WebGL 2.
+- **WebXR Device API** : `XRManager` ouvre la session lui-même avec `navigator.xr.requestSession('immersive-vr')`
+  (`local-floor` obligatoire), et `XRPresenter` lit à chaque image la pose de la tête (`frame.getViewerPose`),
+  celle de chaque œil (`view.projectionMatrix`, `view.transform`) et celle des manettes (`frame.getPose`).
+- **Les deux yeux en une passe WebGPU** grâce à une `ArrayCamera` (une sous-caméra et un viewport par œil).
+- **Sortie vers le casque** : WebXR n'accepte aujourd'hui que des couches WebGL (`XRWebGLLayer`) ; la couche
+  WebGPU (`XRGPUBinding`) est encore expérimentale dans Chrome et absente d'Immersive Web Emulator.
+  L'image WebGPU est donc seulement **copiée** dans la couche (`texImage2D` + `blitFramebuffer`) : WebGL ne dessine rien.
+- **Interactions** : sélection (gâchette / clic gauche) et **saisie** d'objets (bouton grip / clic droit maintenu).
+- **PWA** : `manifest.webmanifest`, Service Worker `sw.js` (fonctionne hors ligne), icônes, enregistrement dans `src/pwa.js`
+  (voir `docs/PWA.md`).
 
-- Les **shaders TSL** fonctionnent sur les deux backends (WebGPU et WebGL 2) : rien à faire.
-- Ne **gardez jamais** `engine.renderer` dans une variable : relisez-le à chaque fois
-  (il peut changer à l'entrée en VR). L'événement `engine.addEventListener('rendererchange', …)` signale ce changement.
-- Les addons de Three.js importent `'three'` : `vite.config.js` redirige `'three'` vers `'three/webgpu'`.
-  Dans notre code, importez toujours `import * as THREE from 'three/webgpu';`.
+Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les addons de Three.js importent `'three'` :
+`vite.config.js` redirige `'three'` vers `'three/webgpu'`.
 
 ---
 
@@ -86,15 +90,18 @@ Inside-Human-VR/
 │   ├── ARCHITECTURE.md         Architecture générale                     → Zaineb
 │   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
 │   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
+│   ├── PWA.md                  Progressive Web App (manifeste, Service Worker) → Melek
 │   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
 ├── sandbox/                  Pages d'essai des visuels (xray, atlas)     → Yessmine
 ├── src/
 │   ├── main.js               Assemble le moteur, les systèmes et la scène → Zaineb
+│   ├── pwa.js                Enregistrement du Service Worker (PWA)      → Melek
 │   ├── core/                 Moteur                                      → Zaineb
 │   │   ├── Engine.js           API centrale (scene, camera, player, onUpdate, isVR)
-│   │   ├── Renderer.js         WebGPURenderer, scène, caméra, lumières, repli XR
-│   │   ├── XRManager.js        Session immersive-vr, manettes, rayons
+│   │   ├── Renderer.js         WebGPURenderer, scène, caméra, lumières, rendu stéréo
+│   │   ├── XRManager.js        Session immersive-vr (API WebXR Device), manettes, rayons
+│   │   ├── XRPresenter.js      Rendu WebGPU des deux yeux et copie vers le casque
 │   │   ├── DesktopControls.js  Mode bureau (PointerLockControls, réticule)
 │   │   └── LevelManager.js     Chargement des niveaux et passage de l'un à l'autre
 │   ├── scenes/
@@ -113,7 +120,11 @@ Inside-Human-VR/
 │   ├── shaders/              Shaders TSL (bloodFlow, tissuePulse)        → Yessmine
 │   ├── levels/               BaseLevel, HeartLevel → Melek ; LungsLevel → Zaineb
 │   └── data/                 GameState (machine à états, score)          → Melek
-└── public/assets/
+└── public/
+    ├── manifest.webmanifest  Manifeste de la PWA (nom, icônes, affichage) → Melek
+    ├── sw.js                 Service Worker : cache et hors ligne        → Melek
+    ├── icons/                Icônes de l'application                     → Melek
+    └── assets/
     ├── models/               Modèles GLB (si besoin)                     → Yessmine
     ├── audio/                Sons (CC0)                                  → Yessmine
     └── content/              levels.json (textes, missions)              → Melek
@@ -263,4 +274,8 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `main.js` : parcours scène de départ → cœur → poumons → retour, adresse `?level=` pour les tests | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | Documentation de `LevelManager` et `LungsLevel` dans `docs/MOTEUR_VR.md` | Fait |
 | 2026-11-14 | Hentati Yessmine | `feature/visuels-poumons-cerveau` | Respiration, changement de couleur du sang, shader `neuronSignal.js`, `AudioManager.js` | À faire |
-| 2026-11-14 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.js`, `Storage.js` (IndexedDB), déblocage des niveaux | À faire |
+| 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.js`, `Storage.js` (IndexedDB), déblocage des niveaux, écran d'accueil final, tests de progression (PR #9) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | VR avec l'API WebXR Device rendue en WebGPU : `XRPresenter.js` (ArrayCamera, copie vers `XRWebGLLayer`), `XRManager.js` (session, `inputSources`, `getPose`) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | Saisie d'objets : grip en VR, clic droit en bureau (`Interaction.js`) ; molécules à déposer (`LungsLevel`), cœur à sortir du corps (`BodyScene`) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-webxr` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
+| 2026-11-12 | Malouli Melek | `feature/pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.js` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.js`, `docs/PWA.md` | Fait |
