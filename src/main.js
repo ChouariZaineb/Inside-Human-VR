@@ -18,6 +18,10 @@ import { createBodyScene } from './scenes/BodyScene.js';
 import { LevelManager } from './core/LevelManager.js';
 import { HeartLevel } from './levels/HeartLevel.js';
 import { LungsLevel } from './levels/LungsLevel.js';
+import { BrainLevel } from './levels/BrainLevel.js';
+import { gameState } from './data/GameState.js';
+import { eventBus, EVENTS } from './systems/EventBus.js';
+import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
@@ -25,6 +29,30 @@ const status = document.getElementById( 'status' );
 // 1. Moteur
 const engine = new Engine( document.getElementById( 'app' ) );
 await engine.init();
+
+// Restaurer les niveaux déjà réussis AVANT toute navigation (IndexedDB, EF-10).
+await restoreProgress( gameState );
+const persistence = bindProgressAutoSave( gameState, eventBus );
+
+function updateProgressSummary() {
+	const summary = document.getElementById( 'progress-summary' );
+	if ( ! summary ) return;
+	const names = { heart: 'Cœur', lungs: 'Poumons', brain: 'Cerveau' };
+	const ids = Object.keys( names );
+	const completed = ids.filter( ( id ) => Boolean( gameState.results[ id ] ) ).length;
+	summary.textContent = `${completed} / 3 missions réussies · Progression enregistrée sur cet appareil`;
+	for ( const id of ids ) {
+		const indicator = document.querySelector( `[data-progress-level=\"${id}\"]` );
+		if ( ! indicator ) continue;
+		const state = gameState.results[ id ] ? 'Réussi' : gameState.isUnlocked( id ) ? 'Accessible' : 'Verrouillé';
+		indicator.textContent = state;
+		indicator.dataset.state = gameState.results[ id ] ? 'done' : gameState.isUnlocked( id ) ? 'available' : 'locked';
+	}
+}
+
+eventBus.on( EVENTS.MISSION_SUCCESS, updateProgressSummary );
+eventBus.on( EVENTS.LEVEL_UNLOCKED, updateProgressSummary );
+updateProgressSummary();
 
 // 2. Entrées : VR et mode bureau
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
@@ -89,11 +117,17 @@ levels.register( 'home', ( ctx ) => {
 // Niveaux (classes de Melek et de Zaineb, basées sur BaseLevel).
 levels.register( 'heart', ( ctx ) => new HeartLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
 levels.register( 'lungs', ( ctx ) => new LungsLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
+levels.register( 'brain', ( ctx ) => new BrainLevel( { scene: ctx.engine.scene, camera: ctx.engine.camera } ) );
 
 // Adresse : ?test → scène de test du moteur ; ?level=lungs → ouvre directement un niveau (pour tester).
 const params = new URLSearchParams( location.search );
 if ( params.has( 'test' ) ) createTestScene( { engine, interaction, teleport } );
-else await levels.load( levels.has( params.get( 'level' ) ) ? params.get( 'level' ) : 'home' );
+else {
+	const requested = params.get( 'level' );
+	const allowed = requested && levels.has( requested ) && ( requested === 'home' || gameState.isUnlocked( requested ) );
+	await levels.load( allowed ? requested : 'home' );
+	if ( requested && ! allowed ) status.textContent = `Niveau « ${requested} » verrouillé ou inconnu : termine d'abord la mission précédente.`;
+}
 
 // 6. Compteur d'images/s, seulement en développement (retiré du build).
 if ( import.meta.env.DEV ) {
@@ -105,7 +139,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { engine, xr, desktop, interaction, teleport, levels };
+	window.app = { engine, xr, desktop, interaction, teleport, levels, gameState, persistence };
 
 }
 

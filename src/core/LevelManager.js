@@ -108,6 +108,10 @@ export class LevelManager {
 	async load( id ) {
 
 		if ( ! this._factories.has( id ) ) throw new Error( `LevelManager : niveau inconnu « ${id} »` );
+		// Impossible de contourner la progression via une URL ou un appel JavaScript.
+		if ( id !== this.homeId && ! this.gameState.isUnlocked( id ) ) {
+			throw new Error( `LevelManager : niveau « ${id} » encore verrouillé` );
+		}
 		if ( this._loading ) await this._loading;
 
 		this._loading = this._doLoad( id );
