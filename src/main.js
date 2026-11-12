@@ -22,13 +22,31 @@ import { BrainLevel } from './levels/BrainLevel.js';
 import { gameState } from './data/GameState.js';
 import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
+import { registerServiceWorker } from './pwa.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
 
 // 1. Moteur
 const engine = new Engine( document.getElementById( 'app' ) );
-await engine.init();
+try {
+
+	await engine.init();
+
+} catch ( error ) {
+
+	// WebGPU indisponible : on l'explique sur l'écran d'accueil et on bloque les boutons.
+	status.textContent = `WebGPU est obligatoire : ${error.message}`;
+	for ( const id of [ 'btn-desktop', 'btn-vr', 'btn-resume' ] ) {
+
+		const button = document.getElementById( id );
+		if ( button ) button.disabled = true;
+
+	}
+	document.getElementById( 'btn-vr' ).textContent = 'WebGPU requis';
+	throw error;
+
+}
 
 // Restaurer les niveaux déjà réussis AVANT toute navigation (IndexedDB, EF-10).
 await restoreProgress( gameState );
@@ -163,3 +181,6 @@ if ( import.meta.env.DEV ) {
 }
 
 engine.start();
+
+// 7. Progressive Web App : Service Worker (installation et fonctionnement hors ligne), sans bloquer le démarrage.
+registerServiceWorker();

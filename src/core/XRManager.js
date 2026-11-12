@@ -1,27 +1,31 @@
 /**
- * XRManager.js — Gestion de la réalité virtuelle (WebXR).
+ * XRManager.js — Gestion de la réalité virtuelle avec l'API WebXR Device.
  *
- * - Relie un bouton « Entrer en VR » à une session 'immersive-vr' en 'local-floor'.
- * - Crée les deux manettes (modèle 3D + rayon visible) dans `engine.player`,
- *   pour qu'elles suivent l'utilisateur lors des téléportations.
+ * - Relie le bouton « Entrer en VR » à navigator.xr.requestSession('immersive-vr'),
+ *   avec la fonctionnalité obligatoire 'local-floor'.
+ * - Confie l'affichage à XRPresenter (rendu WebGPU des deux yeux, copie vers le casque).
+ * - Suit les manettes avec session.inputSources et frame.getPose() : rayon (targetRaySpace)
+ *   et main (gripSpace), placés dans `engine.player` pour suivre les téléportations.
  * - Si WebXR n'est pas disponible, le bouton affiche « VR non disponible » sans planter.
  *
  * Événements émis (THREE.EventDispatcher) :
  *   - 'sessionstart' / 'sessionend'
- *   - 'select' { controller } : gâchette appuyée sur une manette
+ *   - 'select' { controller } : gâchette appuyée (événement WebXR 'selectstart')
+ *   - 'squeezestart' / 'squeezeend' { controller } : bouton de saisie (grip) appuyé / relâché
  *
  * Testé sans casque avec l'extension Chrome « Immersive Web Emulator ».
  */
 import * as THREE from 'three/webgpu';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { XRPresenter } from './XRPresenter.js';
 
 /** Longueur par défaut du rayon des manettes (m). */
 export const RAY_LENGTH = 5;
 
-/** Options de session : 'local-floor' obligatoire, 'webgpu' pour la XR native WebGPU si disponible. */
+/** Options de la session WebXR : 'local-floor' obligatoire (origine au sol). */
 const SESSION_INIT = {
 	requiredFeatures: [ 'local-floor' ],
-	optionalFeatures: [ 'bounded-floor', 'layers', 'webgpu' ]
+	optionalFeatures: [ 'bounded-floor' ]
 };
 
 export class XRManager extends THREE.EventDispatcher {
@@ -50,13 +54,18 @@ export class XRManager extends THREE.EventDispatcher {
 		this._session = null;
 		this._modelFactory = new XRControllerModelFactory();
 
-		this._onSessionEnd = this._onSessionEnd.bind( this );
+		/** Affichage dans le casque (rendu WebGPU). */
+		this.presenter = new XRPresenter( engine );
+		this.presenter.addEventListener( 'frame', ( event ) => this._updateControllers( event.frame, event.referenceSpace ) );
+		this.presenter.addEventListener( 'end', () => this._onSessionEnd() );
+
+		this._onInputSourcesChange = this._onInputSourcesChange.bind( this );
+		this._onSelectStart = ( event ) => this._dispatchInput( 'select', event.inputSource );
+		this._onSqueezeStart = ( event ) => this._dispatchInput( 'squeezestart', event.inputSource );
+		this._onSqueezeEnd = ( event ) => this._dispatchInput( 'squeezeend', event.inputSource );
 
 		// Manettes créées tout de suite : les systèmes peuvent les utiliser dès le départ.
 		this._setupControllers();
-
-		// Si le renderer est remplacé (repli WebGL), on recrée les manettes.
-		engine.addEventListener( 'rendererchange', () => this._setupControllers() );
 
 		if ( this.button ) {
 
@@ -148,13 +157,22 @@ export class XRManager extends THREE.EventDispatcher {
 
 		try {
 
+			// API WebXR Device : demande d'une session immersive.
 			const session = await navigator.xr.requestSession( 'immersive-vr', SESSION_INIT );
-			session.addEventListener( 'end', this._onSessionEnd );
-
-			// Toujours relire engine.renderer : il peut être remplacé pendant cet appel.
-			await this.engine.renderer.xr.setSession( session );
-
 			this._session = session;
+
+			session.addEventListener( 'inputsourceschange', this._onInputSourcesChange );
+			session.addEventListener( 'selectstart', this._onSelectStart );
+			session.addEventListener( 'squeezestart', this._onSqueezeStart );
+			session.addEventListener( 'squeezeend', this._onSqueezeEnd );
+
+			// La boucle du casque remplace celle de la fenêtre.
+			this.engine.pauseDesktopLoop( true );
+			this.engine.xrActive = true;
+
+			await this.presenter.start( session );
+			this._onInputSourcesChange( { added: session.inputSources, removed: [] } );
+
 			this._updateButton();
 			this.dispatchEvent( { type: 'sessionstart' } );
 			return true;
@@ -162,6 +180,10 @@ export class XRManager extends THREE.EventDispatcher {
 		} catch ( error ) {
 
 			console.error( '[XR] Impossible de démarrer la session VR :', error );
+			if ( this._session ) this._session.end().catch( () => {} );
+			this._session = null;
+			this.engine.xrActive = false;
+			this.engine.pauseDesktopLoop( false );
 			this.dispatchEvent( { type: 'error', error } );
 			return false;
 
@@ -179,14 +201,117 @@ export class XRManager extends THREE.EventDispatcher {
 	/** @private */
 	_onSessionEnd() {
 
-		this._session.removeEventListener( 'end', this._onSessionEnd );
+		if ( ! this._session ) return;
+
+		const session = this._session;
+		session.removeEventListener( 'inputsourceschange', this._onInputSourcesChange );
+		session.removeEventListener( 'selectstart', this._onSelectStart );
+		session.removeEventListener( 'squeezestart', this._onSqueezeStart );
+		session.removeEventListener( 'squeezeend', this._onSqueezeEnd );
 		this._session = null;
 
-		// En sortie de VR, la caméra reprend la pose du mode bureau.
+		for ( const controller of this.controllers ) this._disconnect( controller );
+
+		// En sortie de VR, la caméra reprend la pose du mode bureau et la boucle de la fenêtre repart.
+		this.engine.xrActive = false;
 		this.engine.resetCameraPose();
+		this.engine.pauseDesktopLoop( false );
 
 		this._updateButton();
 		this.dispatchEvent( { type: 'sessionend' } );
+
+	}
+
+	/**
+	 * Manettes ajoutées ou retirées (API WebXR : session.inputSources).
+	 * La manette gauche prend l'index 0, la droite l'index 1.
+	 * @private
+	 */
+	_onInputSourcesChange( { added, removed } ) {
+
+		for ( const source of removed ) {
+
+			const controller = this.controllers.find( ( c ) => c.userData.inputSource === source );
+			if ( controller ) this._disconnect( controller );
+
+		}
+
+		for ( const source of added ) {
+
+			if ( ! source.targetRaySpace ) continue;
+			const preferred = source.handedness === 'left' ? 0 : 1;
+			let controller = this.controllers[ preferred ];
+			if ( controller.userData.connected ) controller = this.controllers.find( ( c ) => ! c.userData.connected );
+			if ( ! controller ) continue;
+
+			const grip = this.grips[ controller.userData.index ];
+			controller.userData.connected = true;
+			controller.userData.inputSource = source;
+			controller.userData.line.visible = source.targetRayMode === 'tracked-pointer';
+
+			// Le modèle 3D officiel de la manette se charge à la réception de 'connected'.
+			grip.dispatchEvent( { type: 'connected', data: source } );
+
+		}
+
+	}
+
+	/** @private */
+	_disconnect( controller ) {
+
+		if ( ! controller.userData.connected ) return;
+		controller.userData.connected = false;
+		controller.userData.inputSource = null;
+		controller.userData.line.visible = false;
+		controller.visible = false;
+
+		const grip = this.grips[ controller.userData.index ];
+		grip.visible = false;
+		grip.dispatchEvent( { type: 'disconnected' } );
+
+	}
+
+	/**
+	 * Place les manettes à chaque image avec frame.getPose() (API WebXR).
+	 * @private
+	 * @param {XRFrame} frame
+	 * @param {XRReferenceSpace} referenceSpace
+	 */
+	_updateControllers( frame, referenceSpace ) {
+
+		for ( const controller of this.controllers ) {
+
+			const source = controller.userData.inputSource;
+			const grip = this.grips[ controller.userData.index ];
+			if ( ! source ) continue;
+
+			const rayPose = frame.getPose( source.targetRaySpace, referenceSpace );
+			controller.visible = rayPose !== undefined && rayPose !== null;
+			if ( controller.visible ) {
+
+				controller.matrix.fromArray( rayPose.transform.matrix );
+				controller.updateMatrixWorld( true );
+
+			}
+
+			const gripPose = source.gripSpace ? frame.getPose( source.gripSpace, referenceSpace ) : null;
+			grip.visible = gripPose !== undefined && gripPose !== null;
+			if ( grip.visible ) {
+
+				grip.matrix.fromArray( gripPose.transform.matrix );
+				grip.updateMatrixWorld( true );
+
+			}
+
+		}
+
+	}
+
+	/** @private */
+	_dispatchInput( type, source ) {
+
+		const controller = this.controllers.find( ( c ) => c.userData.inputSource === source );
+		if ( controller ) this.dispatchEvent( { type, controller } );
 
 	}
 
@@ -203,74 +328,35 @@ export class XRManager extends THREE.EventDispatcher {
 	}
 
 	/**
-	 * (Re)crée les deux manettes à partir du renderer courant.
+	 * Crée les deux manettes : un groupe pour le rayon, un groupe pour la main (modèle 3D).
+	 * Leur position est écrite à chaque image par _updateControllers().
 	 * @private
 	 */
 	_setupControllers() {
 
-		const renderer = this.engine.renderer;
 		const player = this.engine.player;
-
-		// Retire les anciennes manettes (cas du changement de renderer).
-		for ( const object of [ ...this.controllers, ...this.grips ] ) player.remove( object );
-		this.controllers = [];
-		this.grips = [];
 
 		for ( let i = 0; i < 2; i ++ ) {
 
 			// Manette « target ray » : origine et direction du rayon.
-			const controller = renderer.xr.getController( i );
+			const controller = new THREE.Group();
+			controller.name = `controller-${i}`;
+			controller.matrixAutoUpdate = false;
+			controller.visible = false;
 			controller.userData.index = i;
 			controller.userData.connected = false;
-
-			if ( ! controller.userData.line ) {
-
-				controller.userData.line = this._createRayLine();
-				controller.add( controller.userData.line );
-
-			}
-
-			if ( ! controller.userData.listening ) {
-
-				controller.userData.listening = true;
-
-				controller.addEventListener( 'connected', ( event ) => {
-
-					controller.userData.connected = true;
-					controller.userData.inputSource = event.data;
-					controller.userData.line.visible = event.data.targetRayMode === 'tracked-pointer';
-
-				} );
-
-				controller.addEventListener( 'disconnected', () => {
-
-					controller.userData.connected = false;
-					controller.userData.inputSource = null;
-					controller.userData.line.visible = false;
-
-				} );
-
-				controller.addEventListener( 'selectstart', () => {
-
-					this.dispatchEvent( { type: 'select', controller } );
-
-				} );
-
-			}
-
-			controller.userData.line.visible = false;
+			controller.userData.inputSource = null;
+			controller.userData.line = this._createRayLine();
+			controller.add( controller.userData.line );
 			player.add( controller );
 			this.controllers.push( controller );
 
 			// Manette « grip » : position de la main, avec le modèle 3D officiel.
-			const grip = renderer.xr.getControllerGrip( i );
-			if ( ! grip.userData.hasModel ) {
-
-				grip.add( this._modelFactory.createControllerModel( grip ) );
-				grip.userData.hasModel = true;
-
-			}
-
+			const grip = new THREE.Group();
+			grip.name = `grip-${i}`;
+			grip.matrixAutoUpdate = false;
+			grip.visible = false;
+			grip.add( this._modelFactory.createControllerModel( grip ) );
 			player.add( grip );
 			this.grips.push( grip );
 

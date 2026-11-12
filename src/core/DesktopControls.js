@@ -47,7 +47,15 @@ export class DesktopControls extends THREE.EventDispatcher {
 		} );
 
 		this._onMouseDown = this._onMouseDown.bind( this );
+		this._onMouseUp = this._onMouseUp.bind( this );
 		document.addEventListener( 'mousedown', this._onMouseDown );
+		document.addEventListener( 'mouseup', this._onMouseUp );
+		// Le clic droit sert à saisir : on bloque le menu contextuel du navigateur.
+		document.addEventListener( 'contextmenu', ( event ) => {
+
+			if ( this.isLocked ) event.preventDefault();
+
+		} );
 
 	}
 
@@ -91,6 +99,7 @@ export class DesktopControls extends THREE.EventDispatcher {
 	dispose() {
 
 		document.removeEventListener( 'mousedown', this._onMouseDown );
+		document.removeEventListener( 'mouseup', this._onMouseUp );
 		this.controls.dispose();
 
 	}
@@ -98,11 +107,18 @@ export class DesktopControls extends THREE.EventDispatcher {
 	/** @private */
 	_onMouseDown( event ) {
 
-		if ( this.enabled && this.isLocked && event.button === 0 ) {
+		if ( ! this.enabled || ! this.isLocked ) return;
 
-			this.dispatchEvent( { type: 'select' } );
+		// Clic gauche : sélectionner. Clic droit maintenu : saisir (comme le bouton grip en VR).
+		if ( event.button === 0 ) this.dispatchEvent( { type: 'select' } );
+		else if ( event.button === 2 ) this.dispatchEvent( { type: 'grabstart' } );
 
-		}
+	}
+
+	/** @private */
+	_onMouseUp( event ) {
+
+		if ( this.enabled && event.button === 2 ) this.dispatchEvent( { type: 'grabend' } );
 
 	}
 
