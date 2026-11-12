@@ -51,12 +51,11 @@ export class Engine extends THREE.EventDispatcher {
 		/** @private */
 		this._timer = new THREE.Timer();
 
-		// Relaye le changement de renderer (repli WebGL en VR) aux systèmes abonnés.
-		this._view.addEventListener( 'rendererchange', ( event ) => {
+		/** Vrai pendant une session VR (mis à jour par XRManager). @type {boolean} */
+		this.xrActive = false;
 
-			this.dispatchEvent( { type: 'rendererchange', renderer: event.renderer } );
-
-		} );
+		/** @private */
+		this._running = false;
 
 	}
 
@@ -75,9 +74,7 @@ export class Engine extends THREE.EventDispatcher {
 	}
 
 	/**
-	 * Renderer courant. Attention : il peut être remplacé à l'entrée en VR
-	 * (repli WebGL) ; ne pas le garder en cache, toujours relire `engine.renderer`.
-	 * Écouter l'événement `rendererchange` si besoin.
+	 * Le WebGPURenderer, utilisé en mode bureau comme en VR.
 	 * @type {THREE.WebGPURenderer}
 	 */
 	get renderer() {
@@ -101,8 +98,61 @@ export class Engine extends THREE.EventDispatcher {
 	 */
 	start() {
 
+		this._running = true;
 		this._timer.reset();
 		this._view.setAnimationLoop( ( timestamp ) => this._loop( timestamp ) );
+
+	}
+
+	/**
+	 * Arrête ou reprend la boucle du mode bureau (pendant la VR, c'est le casque qui rythme les images).
+	 * @param {boolean} paused
+	 */
+	pauseDesktopLoop( paused ) {
+
+		if ( ! this._running ) return;
+		this._view.setAnimationLoop( paused ? null : ( timestamp ) => this._loop( timestamp ) );
+
+	}
+
+	/**
+	 * Met à jour la logique pour une image : appelle toutes les fonctions onUpdate.
+	 * Utilisé par la boucle du mode bureau et par la boucle du casque (XRPresenter).
+	 * @param {DOMHighResTimeStamp} timestamp
+	 */
+	step( timestamp ) {
+
+		this._timer.update( timestamp );
+		// Le delta est borné entre 0 et 0,1 s : au premier affichage, l'horodatage du navigateur
+		// peut être légèrement antérieur à reset() (delta négatif), et après une pause il peut être énorme.
+		const delta = THREE.MathUtils.clamp( this._timer.getDelta(), 0, 0.1 );
+		const elapsed = this._timer.getElapsed();
+
+		for ( const callback of this._callbacks ) callback( delta, elapsed );
+
+	}
+
+	/**
+	 * Rendu stéréo (VR) : les deux yeux en une passe WebGPU.
+	 * @param {THREE.ArrayCamera} stereoCamera
+	 */
+	renderStereo( stereoCamera ) {
+
+		this._view.renderStereo( stereoCamera );
+
+	}
+
+	/** Taille du canvas imposée par le casque. @param {number} width @param {number} height */
+	setXRSize( width, height ) {
+
+		this._view.setXRSize( width, height );
+
+	}
+
+	/** Retour à la taille de la fenêtre après la VR. */
+	restoreSize() {
+
+		this._view.restoreSize();
 
 	}
 
@@ -124,7 +174,7 @@ export class Engine extends THREE.EventDispatcher {
 	 */
 	isVR() {
 
-		return this.renderer !== null && this.renderer.xr.isPresenting === true;
+		return this.xrActive;
 
 	}
 
@@ -146,14 +196,7 @@ export class Engine extends THREE.EventDispatcher {
 	 */
 	_loop( timestamp ) {
 
-		this._timer.update( timestamp );
-		// Le delta est borné entre 0 et 0,1 s : au premier affichage, l'horodatage du navigateur
-		// peut être légèrement antérieur à reset() (delta négatif), et après une pause il peut être énorme.
-		const delta = THREE.MathUtils.clamp( this._timer.getDelta(), 0, 0.1 );
-		const elapsed = this._timer.getElapsed();
-
-		for ( const callback of this._callbacks ) callback( delta, elapsed );
-
+		this.step( timestamp );
 		this._view.render();
 
 	}

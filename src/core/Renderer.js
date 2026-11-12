@@ -2,22 +2,24 @@
  * Renderer.js — Couche de rendu du moteur.
  *
  * Crée la scène, la caméra, les lumières de base et le WebGPURenderer de Three.js.
- * Gère aussi le repli WebGL prévu par Three.js pour la VR : si le navigateur
- * n'expose pas encore XRGPUBinding (cas de Chrome + Immersive Web Emulator),
- * `setupWebGLXRFallback` remplace le renderer par un WebGPURenderer
- * `forceWebGL: true` au moment d'entrer en VR. Le code reste 100 % 'three/webgpu'.
+ * Le rendu se fait TOUJOURS avec ce WebGPURenderer, en mode bureau comme en VR :
+ *   - en mode bureau : une caméra, dans le canvas de la page ;
+ *   - en VR : les deux yeux en une passe (ArrayCamera), puis XRPresenter copie l'image vers le casque.
+ * WebGPU est obligatoire : sans WebGPU, init() lève une erreur, affichée sur l'écran d'accueil par main.js.
  */
 import * as THREE from 'three/webgpu';
-import { setupWebGLXRFallback } from 'three/addons/webxr/WebGLXRFallback.js';
 
 /** Hauteur des yeux (m) en mode bureau, avant l'entrée en VR. */
 export const EYE_HEIGHT = 1.6;
 
-/** Paramètres du WebGPURenderer (repris de l'exemple officiel webgpu_xr_cubes). */
+/** Paramètres du WebGPURenderer. */
 const RENDERER_PARAMETERS = {
 	antialias: true,
 	outputBufferType: THREE.UnsignedByteType
 };
+
+/** Pixel ratio maximal en mode bureau (performances). */
+const MAX_PIXEL_RATIO = 2;
 
 export class Renderer extends THREE.EventDispatcher {
 
@@ -39,11 +41,14 @@ export class Renderer extends THREE.EventDispatcher {
 		this.camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 200 );
 		this.camera.position.set( 0, EYE_HEIGHT, 0 );
 
-		/** Renderer courant (peut changer lors du repli WebGL en VR). @type {?THREE.WebGPURenderer} */
+		/** Le WebGPURenderer de Three.js. @type {?THREE.WebGPURenderer} */
 		this.renderer = null;
 
-		/** Pipeline de rendu direct associé au renderer courant. @type {?THREE.DirectRenderPipeline} */
+		/** Pipeline de rendu direct associé au renderer. @type {?THREE.DirectRenderPipeline} */
 		this.pipeline = null;
+
+		/** Vrai pendant une session VR : la taille du canvas est imposée par le casque. */
+		this.xrSized = false;
 
 		this._addLights();
 		this._onResize = this._onResize.bind( this );
@@ -56,26 +61,22 @@ export class Renderer extends THREE.EventDispatcher {
 	 */
 	async init() {
 
+		// WebGPU est obligatoire : pas de repli WebGL 2.
+		if ( ! navigator.gpu ) throw new Error( 'WebGPU n\'est pas disponible dans ce navigateur (utilisez Chrome ou Edge récent).' );
+
 		const renderer = this._createRenderer();
 		await renderer.init();
+
+		if ( ! renderer.backend.isWebGPUBackend ) throw new Error( 'WebGPU n\'a pas pu démarrer sur cette carte graphique.' );
+
 		this._install( renderer );
-
-		// Repli WebGL automatique au démarrage d'une session XR si nécessaire.
-		setupWebGLXRFallback(
-			renderer,
-			() => this._createRenderer( true ),
-			( newRenderer, oldRenderer ) => this._install( newRenderer, oldRenderer )
-		);
-
 		window.addEventListener( 'resize', this._onResize );
-
-		const backend = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2 (repli)';
-		console.info( `[Renderer] Backend : ${backend}` );
+		console.info( '[Renderer] Backend : WebGPU' );
 
 	}
 
 	/**
-	 * Démarre la boucle de rendu. `setAnimationLoop` est obligatoire pour la XR.
+	 * Démarre ou arrête la boucle de rendu du mode bureau.
 	 * @param {?Function} callback - Appelée à chaque image (null pour arrêter).
 	 */
 	setAnimationLoop( callback ) {
@@ -84,10 +85,43 @@ export class Renderer extends THREE.EventDispatcher {
 
 	}
 
-	/** Dessine la scène avec la caméra principale. */
+	/** Dessine la scène avec la caméra principale (mode bureau). */
 	render() {
 
 		this.pipeline.render( this.scene, this.camera );
+
+	}
+
+	/**
+	 * Dessine la scène pour les deux yeux en une seule passe WebGPU (VR).
+	 * Chaque sous-caméra de l'ArrayCamera a son viewport (moitié gauche, moitié droite).
+	 * @param {THREE.ArrayCamera} stereoCamera
+	 */
+	renderStereo( stereoCamera ) {
+
+		this.renderer.render( this.scene, stereoCamera );
+
+	}
+
+	/**
+	 * Donne au canvas la taille de l'image du casque (pixel ratio 1).
+	 * @param {number} width
+	 * @param {number} height
+	 */
+	setXRSize( width, height ) {
+
+		this.xrSized = true;
+		this.renderer.setPixelRatio( 1 );
+		this.renderer.setSize( width, height, false );
+
+	}
+
+	/** Revient à la taille de la fenêtre après la VR. */
+	restoreSize() {
+
+		this.xrSized = false;
+		this.renderer.setPixelRatio( Math.min( window.devicePixelRatio, MAX_PIXEL_RATIO ) );
+		this._onResize();
 
 	}
 
@@ -104,50 +138,32 @@ export class Renderer extends THREE.EventDispatcher {
 	}
 
 	/**
-	 * Fabrique un WebGPURenderer configuré.
-	 * @param {boolean} [forceWebGL=false] - Force le backend WebGL 2 (repli XR).
+	 * Fabrique le WebGPURenderer.
 	 * @returns {THREE.WebGPURenderer}
 	 */
-	_createRenderer( forceWebGL = false ) {
+	_createRenderer() {
 
-		const parameters = { ...RENDERER_PARAMETERS };
-		if ( forceWebGL ) parameters.forceWebGL = true;
-
-		const renderer = new THREE.WebGPURenderer( parameters );
-		renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+		const renderer = new THREE.WebGPURenderer( RENDERER_PARAMETERS );
+		renderer.setPixelRatio( Math.min( window.devicePixelRatio, MAX_PIXEL_RATIO ) );
 		renderer.setSize( window.innerWidth, window.innerHeight );
-		renderer.xr.enabled = true;
-		renderer.xr.setReferenceSpaceType( 'local-floor' );
+
+		// La VR n'utilise pas le gestionnaire XR intégré de Three.js : XRPresenter parle
+		// directement à l'API WebXR Device et rend avec ce même WebGPURenderer.
+		renderer.xr.enabled = false;
 
 		return renderer;
 
 	}
 
 	/**
-	 * Installe un renderer (premier ou de repli) et prévient les abonnés.
-	 * @param {THREE.WebGPURenderer} newRenderer
-	 * @param {?THREE.WebGPURenderer} [oldRenderer=null]
+	 * Place le canvas dans la page.
+	 * @param {THREE.WebGPURenderer} renderer
 	 */
-	_install( newRenderer, oldRenderer = null ) {
+	_install( renderer ) {
 
-		if ( oldRenderer === null ) {
-
-			this.container.appendChild( newRenderer.domElement );
-
-		} else {
-
-			this.container.replaceChild( newRenderer.domElement, oldRenderer.domElement );
-			oldRenderer.dispose();
-			console.info( '[Renderer] Session XR : repli sur le backend WebGL 2 de Three.js' );
-
-		}
-
-		if ( newRenderer.backend.isWebGLBackend === true ) patchNullXRFramebuffer( newRenderer );
-
-		this.renderer = newRenderer;
-		this.pipeline = new THREE.DirectRenderPipeline( newRenderer );
-
-		this.dispatchEvent( { type: 'rendererchange', renderer: newRenderer, oldRenderer } );
+		this.container.appendChild( renderer.domElement );
+		this.renderer = renderer;
+		this.pipeline = new THREE.DirectRenderPipeline( renderer );
 
 	}
 
@@ -157,46 +173,10 @@ export class Renderer extends THREE.EventDispatcher {
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
 
-		// Pendant une session XR, la taille est imposée par le casque.
-		if ( this.renderer.xr.isPresenting ) return;
+		// Pendant une session VR, la taille est imposée par le casque.
+		if ( this.xrSized ) return;
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 
 	}
-
-}
-
-/**
- * Correctif de compatibilité avec Immersive Web Emulator.
- *
- * L'émulateur dessine directement dans le canvas de la page : son XRWebGLLayer.framebuffer
- * vaut `null` (le framebuffer par défaut). Le backend WebGL de Three.js r187 utilise ce
- * framebuffer comme clé d'une WeakMap dans `state.drawBuffers()`, ce qui lève
- * « Invalid value used as weak map key » à chaque image : rien ne s'affiche en VR.
- * Pour le framebuffer par défaut, on règle simplement la sortie sur gl.BACK.
- * Sur un vrai casque, le framebuffer n'est jamais null et ce correctif n'intervient pas.
- * @param {THREE.WebGPURenderer} renderer - Renderer dont le backend est WebGL.
- */
-function patchNullXRFramebuffer( renderer ) {
-
-	const state = renderer.backend.state;
-	if ( ! state || state._nullFramebufferPatched ) return;
-
-	const drawBuffers = state.drawBuffers.bind( state );
-	let defaultReady = false;
-
-	state.drawBuffers = ( renderContext, framebuffer ) => {
-
-		if ( framebuffer !== null ) return drawBuffers( renderContext, framebuffer );
-
-		if ( ! defaultReady ) {
-
-			state.gl.drawBuffers( [ state.gl.BACK ] );
-			defaultReady = true;
-
-		}
-
-	};
-
-	state._nullFramebufferPatched = true;
 
 }
