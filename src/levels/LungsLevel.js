@@ -173,7 +173,9 @@ export class LungsLevel extends BaseLevel {
 
 		if ( zone === 'alveolus' ) {
 
-			return new THREE.Vector3( ALVEOLUS.x + ( arrival ? 0.35 : - 0.35 ), y, ALVEOLUS.z + ALVEOLUS_RADIUS + 0.25 );
+			// À 15 cm devant la paroi : toutes les places restent dans la zone de dépôt de l'alvéole
+			// (distance au centre < ALVEOLUS_RADIUS + 0,35 m, voir _zoneAt), même en haut et en bas.
+			return new THREE.Vector3( ALVEOLUS.x + ( arrival ? 0.35 : - 0.35 ), y, ALVEOLUS.z + ALVEOLUS_RADIUS + 0.15 );
 
 		}
 
