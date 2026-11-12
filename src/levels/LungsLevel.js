@@ -8,9 +8,10 @@
  * Mission (type « transfer » dans levels.json) : déplacer chaque molécule au bon endroit.
  *   - O₂ (dioxygène) : de l'alvéole vers le capillaire (le sang) ;
  *   - CO₂ (dioxyde de carbone) : du capillaire vers l'alvéole (l'air).
- * Interaction en deux temps, identique en VR et en mode bureau :
- *   1. pointer une molécule et appuyer sur la gâchette (ou cliquer) : elle est « prise » ;
- *   2. pointer la destination (l'alvéole ou le capillaire) et valider.
+ * Deux façons de jouer, en VR comme en mode bureau :
+ *   - saisir la molécule (bouton grip en VR, clic droit maintenu en bureau), la porter et
+ *     la LÂCHER dans l'alvéole ou dans le capillaire ;
+ *   - ou en deux sélections : pointer la molécule (gâchette / clic), puis pointer sa destination.
  *
  * Déroulé (GameState de Melek) : ARRIVAL → EXPLORATION → MISSION → RESULT → DONE.
  * Les textes viennent de levels.json (niveau « lungs ») : ici il n'y a que la logique et le décor.
@@ -144,7 +145,14 @@ export class LungsLevel extends BaseLevel {
 				this.group.add( group );
 				this.addInteractable( group );
 
-				this.molecules.push( { group, kind, done: false, home, target: null, t: 0 } );
+				const molecule = { group, kind, done: false, home, from: null, target: null, t: 0, onArrive: null, grabbed: false };
+				this.molecules.push( molecule );
+
+				// Saisie : LevelManager transmet ces fonctions à Interaction.
+				group.userData.grab = {
+					onGrab: () => this._onMoleculeGrabbed( molecule ),
+					onRelease: ( { position } ) => this._onMoleculeDropped( molecule, position )
+				};
 
 			}
 
@@ -205,7 +213,7 @@ export class LungsLevel extends BaseLevel {
 		if ( this.gameState.phase !== PHASE.EXPLORATION ) return;
 		this.gameState.setPhase( PHASE.MISSION );
 		this._setButton( null );
-		this._showProgress( this.content.mission.titre, this.content.mission.consigne, 'info' );
+		this._showProgress( this.content.mission.titre, `${this.content.mission.consigne}\nSaisis une molécule (grip ou clic droit) et lâche-la au bon endroit.`, 'info' );
 
 	}
 
@@ -244,7 +252,7 @@ export class LungsLevel extends BaseLevel {
 
 		}
 
-		if ( molecule.done || molecule.target ) return;
+		if ( molecule.done || molecule.arriving ) return;
 
 		this.held = molecule;
 		this._flashObject( molecule.group, 'held' );
@@ -285,6 +293,7 @@ export class LungsLevel extends BaseLevel {
 		if ( destination === molecule.kind.depuis ) {
 
 			// Même endroit : la molécule est relâchée, ce n'est pas une erreur.
+			this._returnHome( molecule );
 			this._showProgress( 'Molécule relâchée', 'Choisis une destination différente de son point de départ.', 'info' );
 			return;
 
@@ -292,6 +301,7 @@ export class LungsLevel extends BaseLevel {
 
 		if ( destination !== molecule.kind.vers ) {
 
+			this._returnHome( molecule );
 			this.gameState.recordError( molecule.kind.id );
 			this._flashObject( this.elements.get( destination ), 'error' );
 			this._showProgress( 'Oups !', this.content.mission.erreurGenerique, 'error' );
@@ -300,20 +310,105 @@ export class LungsLevel extends BaseLevel {
 		}
 
 		// Bonne destination : la molécule traverse la paroi.
-		const index = this.molecules.filter( ( m ) => m.kind.id === molecule.kind.id && ( m.done || m.target ) ).length;
-		molecule.target = this._slot( destination, index, true );
-		molecule.t = 0;
+		const index = this.molecules.filter( ( m ) => m !== molecule && m.kind.id === molecule.kind.id && ( m.done || m.arriving ) ).length;
+		molecule.arriving = true;
+		this._moveTo( molecule, this._slot( destination, index, true ), () => {
+
+			molecule.home = molecule.group.position.clone();
+			this._onArrived( molecule );
+
+		} );
 		this.gameState.recordCorrect();
 		this._flashObject( this.elements.get( destination ), 'success' );
 		this._showProgress( 'Bien joué !', molecule.kind.explication, 'success' );
 
 	}
 
-	/** Appelé quand une molécule a fini son déplacement. */
+	// ---------- Saisie (grip en VR, clic droit en bureau) ----------
+
+	_onMoleculeGrabbed( molecule ) {
+
+		molecule.grabbed = true;
+		if ( this.gameState.phase === PHASE.MISSION && ! molecule.done ) {
+
+			this.held = molecule;
+			this._flashObject( molecule.group, 'held' );
+			this._showProgress( `${molecule.kind.symbole} en main`, 'Porte-la et lâche-la dans l\'alvéole (l\'air) ou dans le capillaire (le sang).', 'info' );
+
+		}
+
+	}
+
+	/**
+	 * La molécule est lâchée : on regarde dans quelle zone elle se trouve.
+	 * @param {Object} molecule
+	 * @param {THREE.Vector3} worldPosition - Endroit du lâcher (coordonnées monde).
+	 */
+	_onMoleculeDropped( molecule, worldPosition ) {
+
+		molecule.grabbed = false;
+		if ( this.held === molecule ) this.held = null;
+
+		// Elle était déjà en route vers sa destination : elle reprend son trajet depuis ici.
+		if ( molecule.target ) {
+
+			this._moveTo( molecule, molecule.target, molecule.onArrive );
+			return;
+
+		}
+
+		if ( this.gameState.phase !== PHASE.MISSION || molecule.done ) return this._returnHome( molecule );
+
+		const zone = this._zoneAt( this.group.worldToLocal( worldPosition.clone() ) );
+		if ( ! zone ) {
+
+			this._returnHome( molecule );
+			this._showProgress( 'Pas ici !', 'Lâche la molécule dans l\'alvéole (la sphère rose) ou dans le capillaire (l\'anneau).', 'info' );
+			return;
+
+		}
+
+		this._tryTransfer( molecule, zone );
+
+	}
+
+	/**
+	 * Zone où se trouve un point : l'alvéole, le capillaire, ou aucune.
+	 * @param {THREE.Vector3} point - Coordonnées locales du niveau.
+	 * @returns {?('alveolus'|'capillary')}
+	 */
+	_zoneAt( point ) {
+
+		const distance = point.distanceTo( ALVEOLUS );
+		if ( distance < ALVEOLUS_RADIUS + 0.35 ) return 'alveolus';
+		if ( point.x > ALVEOLUS.x + 0.3 && Math.abs( distance - CAPILLARY_RADIUS ) < 0.55 ) return 'capillary';
+		return null;
+
+	}
+
+	/** Déplacement animé d'une molécule vers une position, puis appel de onArrive. */
+	_moveTo( molecule, target, onArrive = null ) {
+
+		molecule.from = molecule.group.position.clone();
+		molecule.target = target.clone();
+		molecule.onArrive = onArrive;
+		molecule.t = 0;
+
+	}
+
+	/** La molécule retourne à sa place de départ (sauf si elle y est déjà). */
+	_returnHome( molecule ) {
+
+		if ( molecule.group.position.distanceTo( molecule.home ) < 0.01 ) return;
+		this._moveTo( molecule, molecule.home );
+
+	}
+
+	/** Appelé quand une molécule a atteint sa destination. */
 	_onArrived( molecule ) {
 
 		molecule.done = true;
-		molecule.target = null;
+		molecule.arriving = false;
 
 		// La molécule arrivée n'est plus pointable.
 		const index = this._interactables.indexOf( molecule.group );
@@ -340,7 +435,7 @@ export class LungsLevel extends BaseLevel {
 
 	_footer() {
 
-		const done = this.molecules.filter( ( m ) => m.done || m.target ).length;
+		const done = this.molecules.filter( ( m ) => m.done || m.arriving ).length;
 		return `Molécules déplacées : ${done} sur ${this.molecules.length}`;
 
 	}
@@ -387,15 +482,19 @@ export class LungsLevel extends BaseLevel {
 		// Molécules : flottement, déplacement vers la destination.
 		this.molecules.forEach( ( m, i ) => {
 
+			if ( m.grabbed ) return; // tenue en main : c'est la manette qui la déplace
+
 			if ( m.target ) {
 
 				m.t = Math.min( 1, m.t + delta / MOVE_TIME );
 				const s = m.t * m.t * ( 3 - 2 * m.t ); // départ et arrivée en douceur
-				m.group.position.lerpVectors( m.home, m.target, s );
+				m.group.position.lerpVectors( m.from, m.target, s );
 				if ( m.t >= 1 ) {
 
-					m.home = m.target.clone();
-					this._onArrived( m );
+					const onArrive = m.onArrive;
+					m.target = null;
+					m.onArrive = null;
+					if ( onArrive ) onArrive();
 
 				}
 				return;

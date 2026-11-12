@@ -2,13 +2,21 @@
  * Interaction.js — Pointage et sélection d'objets (raycasting).
  *
  * Un seul code de raycasting, deux stratégies d'entrée (patron Strategy) :
- *   - VR     : un rayon par manette, sélection à la gâchette ;
- *   - bureau : un rayon depuis le centre de l'écran (réticule), sélection au clic.
+ *   - VR     : un rayon par manette, sélection à la gâchette, saisie au bouton grip ;
+ *   - bureau : un rayon depuis le centre de l'écran (réticule), sélection au clic gauche,
+ *              saisie en maintenant le clic droit.
+ *
+ * Saisir (grab) : l'objet visé est accroché à la manette (ou à la caméra en bureau),
+ * suit la main, puis est rendu à la scène quand on relâche, à l'endroit où on l'a lâché.
  *
  * @example
  * interaction.addSelectable( mesh, {
  *   onHover: ( { hovered } ) => console.log( hovered ? 'survol' : 'fin du survol' ),
  *   onSelect: ( { object, point } ) => console.log( 'sélection de', object.name, point )
+ * } );
+ * interaction.addSelectable( molecule, {
+ *   grabbable: true,
+ *   onRelease: ( { object, position } ) => console.log( 'lâché en', position )
  * } );
  * interaction.removeSelectable( mesh );
  */
@@ -34,6 +42,9 @@ import { RAY_LENGTH } from '../core/XRManager.js';
  * @property {(event: SelectEvent) => void} [onSelect] - Gâchette ou clic sur l'objet.
  * @property {boolean} [highlight=true] - Surbrillance automatique (émissive) au survol.
  * @property {number} [highlightColor=0x444444] - Couleur émissive de surbrillance.
+ * @property {boolean} [grabbable=false] - L'objet peut être saisi (grip en VR, clic droit en bureau).
+ * @property {(event: { object, source }) => void} [onGrab] - L'objet vient d'être saisi.
+ * @property {(event: { object, position: THREE.Vector3, source }) => void} [onRelease] - L'objet est lâché (position monde).
  */
 
 const SCREEN_CENTER = new THREE.Vector2( 0, 0 );
@@ -63,9 +74,17 @@ export class Interaction {
 		/** @private */
 		this._raycaster = new THREE.Raycaster();
 
-		// Les deux stratégies d'entrée déclenchent la même sélection.
+		/** Objets tenus : id du pointeur → { object, parent, holder }. @private */
+		this._held = new Map();
+
+		// Les deux stratégies d'entrée déclenchent la même sélection et la même saisie.
 		xr.addEventListener( 'select', ( event ) => this._select( 'vr-' + event.controller.userData.index, 'vr' ) );
 		desktop.addEventListener( 'select', () => this._select( 'desktop', 'desktop' ) );
+
+		xr.addEventListener( 'squeezestart', ( event ) => this._grab( 'vr-' + event.controller.userData.index, event.controller, 'vr' ) );
+		xr.addEventListener( 'squeezeend', ( event ) => this._release( 'vr-' + event.controller.userData.index, 'vr' ) );
+		desktop.addEventListener( 'grabstart', () => this._grab( 'desktop', engine.camera, 'desktop' ) );
+		desktop.addEventListener( 'grabend', () => this._release( 'desktop', 'desktop' ) );
 
 		this._unsubscribe = engine.onUpdate( () => this.update() );
 
@@ -88,6 +107,7 @@ export class Interaction {
 	 */
 	removeSelectable( object ) {
 
+		for ( const [ id, held ] of this._held ) if ( held.object === object ) this._release( id, null, false );
 		if ( this._hovered.has( object ) ) this._setHovered( object, false );
 		this._hovered.delete( object );
 		this._selectables.delete( object );
@@ -238,6 +258,63 @@ export class Interaction {
 
 		const options = this._selectables.get( hit.object );
 		if ( options && options.onSelect ) options.onSelect( { object: hit.object, point: hit.point, source } );
+
+	}
+
+	/**
+	 * Saisit l'objet visé par ce pointeur : il est accroché à la main (manette) ou à la caméra.
+	 * `attach` conserve sa position dans le monde au moment de la saisie.
+	 * @private
+	 */
+	_grab( pointerId, holder, source ) {
+
+		if ( this._held.has( pointerId ) ) return;
+
+		const hit = this._hits.get( pointerId );
+		if ( ! hit ) return;
+
+		const options = this._selectables.get( hit.object );
+		if ( ! options || ! options.grabbable ) return;
+
+		const object = hit.object;
+		this._held.set( pointerId, { object, parent: object.parent } );
+		holder.attach( object );
+
+		if ( options.onGrab ) options.onGrab( { object, source } );
+
+	}
+
+	/**
+	 * Lâche l'objet tenu : il revient dans sa scène d'origine, à l'endroit où on l'a lâché.
+	 * @private
+	 */
+	_release( pointerId, source, notify = true ) {
+
+		const held = this._held.get( pointerId );
+		if ( ! held ) return;
+		this._held.delete( pointerId );
+
+		const { object, parent } = held;
+		if ( parent ) parent.attach( object );
+
+		const options = this._selectables.get( object );
+		if ( notify && options && options.onRelease ) {
+
+			options.onRelease( { object, position: object.getWorldPosition( new THREE.Vector3() ), source } );
+
+		}
+
+	}
+
+	/**
+	 * Vrai si l'objet est actuellement tenu.
+	 * @param {THREE.Object3D} object
+	 * @returns {boolean}
+	 */
+	isHeld( object ) {
+
+		for ( const held of this._held.values() ) if ( held.object === object ) return true;
+		return false;
 
 	}
 
