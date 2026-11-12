@@ -1,0 +1,83 @@
+# ci.yml — Intégration continue d'Inside Human VR
+#
+# @author Chouari Zaineb
+# @date   2026-11-12
+# @role   CI : à chaque push et à chaque pull request, vérifier automatiquement que le projet
+#         s'installe, que les tests unitaires passent, qu'il se construit, puis lancer les
+#         11 tests de bout en bout (WebGPU, VR simulée Meta Quest 3, interactions, PWA hors ligne).
+#
+# Résultat visible sur GitHub : onglet « Actions », et coche verte / croix rouge sur chaque pull request.
+
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: # lancement manuel depuis l'onglet Actions
+
+# Un nouveau push sur la même branche annule le passage précédent, devenu inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. Installation, tests unitaires (Melek) et construction de la version de production.
+  build:
+    name: Build et tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances (versions exactes du package-lock.json)
+        run: npm ci
+
+      - name: Tests unitaires (progression, score, déblocage)
+        run: npm test
+
+      - name: Construire la version de production
+        run: npm run build
+
+  # 2. Tests de bout en bout dans un vrai Chromium, avec un casque Meta Quest 3 simulé (iwer).
+  e2e:
+    name: Tests de bout en bout (Playwright + VR simulée)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Installer Chromium pour Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Lancer les 11 tests de bout en bout
+        # Sous Linux, WebGPU passe par SwiftShader (rendu logiciel) : voir playwright.config.js.
+        run: npm run test:e2e
+        env:
+          HEADLESS: '1'
+
+      - name: Publier le rapport des tests (captures et traces en cas d'échec)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: playwright-report/
+          retention-days: 14

@@ -56,14 +56,14 @@ export default defineConfig( {
 			command: 'npx vite --port 5173 --strictPort',
 			url: DEV_URL,
 			ignoreHTTPSErrors: true,
-			reuseExistingServer: true,
+			reuseExistingServer: ! process.env.CI,
 			timeout: 60_000
 		},
 		{
 			command: 'npx vite build && npx vite preview --port 4173 --strictPort',
 			url: PREVIEW_URL,
 			ignoreHTTPSErrors: true,
-			reuseExistingServer: true,
+			reuseExistingServer: ! process.env.CI,
 			timeout: 120_000
 		}
 	]

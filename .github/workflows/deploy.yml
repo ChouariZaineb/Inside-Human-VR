@@ -1,0 +1,70 @@
+# deploy.yml — Déploiement continu d'Inside Human VR sur GitHub Pages
+#
+# @author Chouari Zaineb
+# @date   2026-11-12
+# @role   CD : à chaque fusion dans main, construire l'application et la publier en ligne
+#         (HTTPS fourni par GitHub Pages, obligatoire pour WebXR et le Service Worker).
+#
+# Adresse publique : https://chouarizaineb.github.io/Inside-Human-VR/
+# Prérequis (une seule fois) : Settings → Pages → Build and deployment → Source : « GitHub Actions ».
+
+name: Déploiement GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # redéploiement manuel depuis l'onglet Actions
+
+# Droits minimaux nécessaires pour publier sur GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; le plus récent l'emporte.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Construire
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Tests unitaires (on ne publie pas une version cassée)
+        run: npm test
+
+      - name: Construire la version de production (dossier dist/)
+        run: npm run build
+
+      - name: Préparer GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Envoyer le dossier dist/
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publier en ligne
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
