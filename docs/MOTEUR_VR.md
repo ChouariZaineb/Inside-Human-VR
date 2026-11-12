@@ -13,6 +13,7 @@ Ce document explique chaque fichier du moteur : ce qu'il fait, comment il le fai
 | `src/core/DesktopControls.js` | Le mode bureau : regarder à la souris, viser au réticule |
 | `src/systems/Interaction.js` | Savoir ce que l'utilisateur vise et sélectionne (raycasting) |
 | `src/systems/Teleport.js` | Se déplacer par téléportation, avec un fondu au noir |
+| `src/systems/Manipulation.js` | Joysticks : tourner sur soi, faire tourner et approcher l'objet tenu |
 | `src/scenes/BodyScene.js` | La scène de départ : le corps humain |
 | `src/core/LevelManager.js` | Charge un niveau à la fois et passe de l'un à l'autre |
 | `src/levels/LungsLevel.js` | Le niveau 2 : les poumons et les échanges gazeux |
@@ -217,6 +218,27 @@ Il fait le lien entre la session WebXR et le `WebGPURenderer`.
 
 **Avec l'émulateur** : la taille de l'image peut changer après le démarrage (l'émulateur adapte le canvas à la fenêtre) ; elle est relue à chaque image.
 
+## 15. Interactivité avancée : vibrations et joysticks
+
+**Retour haptique (`XRManager.pulse`)** : chaque manette WebXR expose un `gamepad` (API Gamepad). Sa méthode `hapticActuators[0].pulse(intensité, durée)` la fait vibrer. `Interaction` l'appelle :
+
+| Action | Intensité | Durée |
+|---|---|---|
+| Le rayon arrive sur un nouvel objet | 0,15 | 15 ms |
+| Sélection (gâchette) | 0,6 | 50 ms |
+| Saisie (grip) | 0,8 | 70 ms |
+| Lâcher | 0,3 | 30 ms |
+| Palier de rotation sur soi | 0,3 | 30 ms |
+
+**Joysticks (`XRManager.getThumbstick`)** : avec le mapping standard des manettes (`xr-standard`), le joystick correspond aux axes 2 (gauche-droite) et 3 (haut-bas) de `gamepad.axes`, entre -1 et 1.
+
+**`src/systems/Manipulation.js`** utilise ces axes à chaque image :
+- **mains libres** : joystick à gauche ou à droite → **rotation sur soi de 30°** (*snap turn*). Un palier est déclenché au-delà de 0,7 et le suivant seulement après un retour sous 0,3 (hystérésis), pour ne pas enchaîner les rotations. La rotation se fait **autour de la tête** : on ramène la tête à l'origine, on fait tourner `player`, puis on remet la tête en place ;
+- **objet en main** : gauche-droite → l'objet **tourne** sur lui-même (`rotateY`, 2,5 rad/s) ; haut-bas → il **s'éloigne ou se rapproche** de la main (de 0,15 m à 3 m, 1,2 m/s) ;
+- **en mode bureau** : la **molette** règle la distance de l'objet tenu (clic droit), les touches **Q** et **E** le font tourner.
+
+Une zone morte de 0,15 ignore les petits mouvements involontaires du joystick.
+
 ---
 
 ## Vocabulaire
@@ -228,6 +250,8 @@ Il fait le lien entre la session WebXR et le `WebGPURenderer`.
 | TSL | Langage de shaders de Three.js, écrit en JavaScript, traduit en WGSL ou en GLSL |
 | WebXR Device API | API du navigateur pour la réalité virtuelle et augmentée (session, poses, manettes) |
 | `XRWebGLLayer` | Couche par laquelle WebXR affiche une image dans le casque |
+| Retour haptique | Vibration de la manette pour confirmer une action |
+| Snap turn | Rotation sur soi par paliers (ici 30°), plus confortable qu'une rotation continue |
 | `ArrayCamera` | Caméra de Three.js qui regroupe plusieurs sous-caméras (ici, une par œil) |
 | `immersive-vr` | Mode de session WebXR où l'on est entièrement dans le monde virtuel |
 | `local-floor` | Espace de référence dont l'origine est au niveau du sol |

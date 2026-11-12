@@ -13,6 +13,10 @@
  *   - 'select' { controller } : gâchette appuyée (événement WebXR 'selectstart')
  *   - 'squeezestart' / 'squeezeend' { controller } : bouton de saisie (grip) appuyé / relâché
  *
+ * Retour et entrées supplémentaires (API Gamepad de chaque inputSource) :
+ *   - pulse(controller, intensité, durée) : vibration de la manette (retour haptique) ;
+ *   - getThumbstick(controller) : position du joystick { x, y } entre -1 et 1.
+ *
  * Testé sans casque avec l'extension Chrome « Immersive Web Emulator ».
  */
 import * as THREE from 'three/webgpu';
@@ -304,6 +308,47 @@ export class XRManager extends THREE.EventDispatcher {
 			}
 
 		}
+
+	}
+
+	/**
+	 * Fait vibrer une manette (retour haptique), si le matériel le permet.
+	 * @param {THREE.Group} controller - Une des deux manettes (this.controllers).
+	 * @param {number} [intensity=0.5] - Force, de 0 à 1.
+	 * @param {number} [duration=40] - Durée en millisecondes.
+	 */
+	pulse( controller, intensity = 0.5, duration = 40 ) {
+
+		const gamepad = controller && controller.userData.inputSource && controller.userData.inputSource.gamepad;
+		if ( ! gamepad ) return;
+
+		const actuator = gamepad.hapticActuators && gamepad.hapticActuators[ 0 ];
+		if ( actuator && actuator.pulse ) {
+
+			actuator.pulse( intensity, duration ).catch( () => {} );
+
+		} else if ( gamepad.vibrationActuator && gamepad.vibrationActuator.playEffect ) {
+
+			gamepad.vibrationActuator.playEffect( 'dual-rumble', { duration, strongMagnitude: intensity, weakMagnitude: intensity } ).catch( () => {} );
+
+		}
+
+	}
+
+	/**
+	 * Position du joystick d'une manette (mapping « xr-standard » : axes 2 et 3).
+	 * @param {THREE.Group} controller
+	 * @returns {{ x: number, y: number }} Entre -1 et 1 ; { 0, 0 } sans joystick.
+	 */
+	getThumbstick( controller ) {
+
+		const gamepad = controller && controller.userData.inputSource && controller.userData.inputSource.gamepad;
+		if ( ! gamepad || ! gamepad.axes ) return { x: 0, y: 0 };
+
+		const axes = gamepad.axes;
+		const x = axes.length >= 4 ? axes[ 2 ] : ( axes[ 0 ] || 0 );
+		const y = axes.length >= 4 ? axes[ 3 ] : ( axes[ 1 ] || 0 );
+		return { x, y };
 
 	}
 
