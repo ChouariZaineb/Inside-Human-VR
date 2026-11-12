@@ -89,6 +89,7 @@ Inside-Human-VR/
 ├── docs/                     Documentation du projet
 │   ├── ARCHITECTURE.md         Architecture générale                     → Zaineb
 │   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
+│   ├── PIPELINE_XR.md          Formalisation mathématique du moteur      → Zaineb
 │   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
 │   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
@@ -280,3 +281,4 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.js` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.js` | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/interactivite-vr` | Retour haptique (vibration des manettes), `Manipulation.js` : rotation sur soi par paliers, rotation et distance de l'objet tenu (joystick, molette, Q / E) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/pipeline-maths` | `docs/PIPELINE_XR.md` : formalisation mathématique du moteur (poses WebXR, matrices de vue et de projection, raycasting, saisie, téléportation, snap turn, interpolations, zones de dépôt) | Fait |
