@@ -13,6 +13,7 @@ import { XRManager } from './core/XRManager.js';
 import { DesktopControls } from './core/DesktopControls.js';
 import { Interaction } from './systems/Interaction.js';
 import { Teleport } from './systems/Teleport.js';
+import { Manipulation } from './systems/Manipulation.js';
 import { createTestScene } from './debug/TestScene.js';
 import { createBodyScene } from './scenes/BodyScene.js';
 import { LevelManager } from './core/LevelManager.js';
@@ -96,6 +97,8 @@ document.getElementById( 'btn-desktop' ).addEventListener( 'click', () => deskto
 // 3. Systèmes
 const interaction = new Interaction( engine, xr, desktop );
 const teleport = new Teleport( engine, interaction );
+// Joysticks (rotation sur soi, rotation et distance des objets tenus), molette et touches Q / E en bureau.
+const manipulation = new Manipulation( engine, xr, desktop, interaction );
 
 // 4. Écran d'accueil : caché pendant la VR ou le mode bureau.
 desktop.addEventListener( 'lock', () => { home.hidden = true; } );
@@ -176,7 +179,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { engine, xr, desktop, interaction, teleport, levels, gameState, persistence };
+	window.app = { engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence };
 
 }
 
