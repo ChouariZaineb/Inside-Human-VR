@@ -6,7 +6,9 @@
  *     pour donner l'impression d'être déjà miniaturisé devant lui ;
  *   - une plateforme ronde au sol ;
  *   - 3 points de téléportation : vue d'ensemble, vue du thorax, vue de côté ;
- *   - le cœur est sélectionnable (gâchette ou clic) : point d'entrée du niveau 1.
+ *   - le cœur est sélectionnable (gâchette ou clic) : point d'entrée du niveau 1 ;
+ *   - le cœur peut aussi être SAISI (grip ou clic droit maintenu) et sorti du corps pour l'observer :
+ *     lâché, il revient se placer tout seul dans la poitrine.
  *
  * Elle relie le travail des trois membres : moteur et VR (Zaineb), modèle 3D (Yessmine),
  * et plus tard l'entrée dans les niveaux (Melek).
@@ -70,7 +72,11 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 	teleport.setPoints( points );
 	teleport.teleportTo( points[ 0 ], { instant: true } );
 
-	// 4. Le cœur est sélectionnable : il annonce l'entrée dans le niveau 1.
+	// 4. Le cœur : sélection (entrée dans le niveau 1) et saisie (pour l'observer de près).
+	const heartHome = { position: body.heart.position.clone(), quaternion: body.heart.quaternion.clone() };
+	let heartReturn = null; // animation de retour dans la poitrine
+	let heartHeld = false;
+
 	interaction.addSelectable( body.heart, {
 		highlight: false,
 		// Au survol, le cœur grossit (son enfant, car body.update() anime déjà l'échelle de body.heart).
@@ -80,16 +86,51 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 			console.log( `[BodyScene] Cœur sélectionné (${source}) : entrée dans le niveau 1` );
 			if ( onOrganSelected ) onOrganSelected( 'heart' );
 
+		},
+		grabbable: true,
+		onGrab: ( { source } ) => {
+
+			// Le cœur vient dans la main, 50 cm devant la manette (ou devant les yeux en mode bureau).
+			heartReturn = null;
+			heartHeld = true;
+			body.heart.position.set( 0, 0, - 0.5 );
+			console.log( `[BodyScene] Cœur saisi (${source})` );
+
+		},
+		onRelease: () => {
+
+			// De retour dans le corps : il repart vers sa place dans la poitrine.
+			heartHeld = false;
+			heartReturn = { t: 0, position: body.heart.position.clone(), quaternion: body.heart.quaternion.clone() };
+
 		}
 	} );
 
+	const stopReturn = engine.onUpdate( ( delta ) => {
+
+		if ( ! heartReturn ) return;
+		heartReturn.t = Math.min( 1, heartReturn.t + delta / 0.8 );
+		const k = heartReturn.t * heartReturn.t * ( 3 - 2 * heartReturn.t );
+		body.heart.position.lerpVectors( heartReturn.position, heartHome.position, k );
+		body.heart.quaternion.slerpQuaternions( heartReturn.quaternion, heartHome.quaternion, k );
+		if ( heartReturn.t >= 1 ) heartReturn = null;
+
+	} );
+
 	// 5. Animation : battement du cœur et sang qui circule.
-	const stopUpdate = engine.onUpdate( ( delta ) => body.update( delta ) );
+	const stopUpdate = engine.onUpdate( ( delta ) => {
+
+		body.update( delta );
+		// Tenu en main, le cœur n'est plus dans le corps mis à l'échelle : on garde sa taille réelle (≈ 35 cm).
+		if ( heartHeld ) body.heart.scale.multiplyScalar( BODY_SCALE );
+
+	} );
 
 	// Libération propre (utilisée par le futur LevelManager).
 	return function dispose() {
 
 		stopUpdate();
+		stopReturn();
 		teleport.clear();
 		interaction.removeSelectable( body.heart );
 		engine.scene.remove( root );

@@ -13,6 +13,9 @@
  *   - quand un niveau est terminé (EVENTS.LEVEL_COMPLETED), on passe au niveau débloqué
  *     suivant, ou on revient à la scène de départ.
  *
+ * Saisie : si un objet pointable a `userData.grab = { onGrab, onRelease }`, il peut être saisi
+ * (bouton grip en VR, clic droit maintenu en bureau) ; `onRelease({ position })` reçoit l'endroit du lâcher.
+ *
  * Un « niveau » est tout objet qui possède tout ou partie de ces méthodes :
  *   load(), start(), update(delta, elapsed), dispose(),
  *   getInteractables() → Object3D[], getTeleportPoints() → [{ position, rotationY }].
@@ -218,10 +221,16 @@ export class LevelManager {
 
 			if ( this._linked.has( object ) ) continue;
 
+			// Un niveau rend un objet saisissable en remplissant object.userData.grab = { onGrab, onRelease }.
+			const grab = object.userData.grab;
+
 			this.interaction.addSelectable( object, {
 				// Les panneaux n'ont pas de couleur émissive : la surbrillance ne s'applique qu'aux objets 3D.
 				highlight: ! object.userData.panel,
-				onSelect: ( { object: selected } ) => this.eventBus.emit( EVENTS.OBJECT_SELECTED, { object: selected } )
+				onSelect: ( { object: selected } ) => this.eventBus.emit( EVENTS.OBJECT_SELECTED, { object: selected } ),
+				grabbable: Boolean( grab ),
+				onGrab: grab && grab.onGrab,
+				onRelease: grab && grab.onRelease
 			} );
 			this._linked.add( object );
 
