@@ -7,3 +7,7 @@ dist
 certificates/ 
 *.p12 
 *.jks 
+
+# Rapports des tests Playwright
+playwright-report/
+test-results/

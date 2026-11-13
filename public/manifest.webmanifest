@@ -1,0 +1,18 @@
+{
+  "name": "Inside Human VR — Voyage dans le corps humain",
+  "short_name": "Inside Human VR",
+  "description": "Application éducative de réalité virtuelle : explore le cœur, les poumons et le cerveau et réussis leurs missions, avec ou sans casque.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#081325",
+  "theme_color": "#081325",
+  "categories": [ "education", "medical" ],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "repository": {
     "type": "git",
@@ -20,6 +23,8 @@
   },
   "homepage": "https://github.com/ChouariZaineb/Inside-Human-VR#readme",
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "iwer": "^2.8.0",
     "vite": "^8.3.5"
   },
   "dependencies": {
