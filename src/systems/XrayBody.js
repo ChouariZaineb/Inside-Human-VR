@@ -6,6 +6,8 @@ import * as THREE from 'three/webgpu';
 import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { vec3, float, mix, normalView, positionViewDirection } from 'three/tsl';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { createAnatomicalHeart } from './ProceduralHeart.js';
 import { beatJS } from '../shaders/tissuePulse.js';
 
@@ -223,13 +225,31 @@ export function createXrayBody({ branches = 1 } = {}) {
   const ba = new FlowArrows(blueArrows, [0.45, 0.95, 1.0]);
   group.add(ra.mesh, ba.mesh);
 
-  let t = 0;
+  let t = 0, mixer = null, real = null;
   return {
     group, heart,
+    // Remplace le cœur généré par un vrai modèle .glb (ex. /assets/models/heart.glb).
+    // height : hauteur du cœur dans la scène · rotation : [rx, ry, rz] en radians · position : décalage local
+    async loadRealHeart(url, { height = 1.7, rotation = [0, 0, 0], position = [0, 0, 0] } = {}) {
+      const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath(`${import.meta.env.BASE_URL}draco/`));
+      const gltf = await loader.loadAsync(url);
+      const model = gltf.scene, wrap = new THREE.Group();
+      model.rotation.set(...rotation); wrap.add(model);
+      const box = new THREE.Box3().setFromObject(wrap);
+      model.scale.setScalar(height / Math.max(box.getSize(new THREE.Vector3()).y, 1e-4));   // mise à l'échelle automatique
+      box.setFromObject(wrap); model.position.sub(box.getCenter(new THREE.Vector3()));       // recentrage sur l'origine
+      wrap.position.set(...position);
+      wrap.traverse((o) => { if (o.isMesh) { o.renderOrder = 3; o.frustumCulled = false; } });
+      heart.remove(inner); inner.traverse((o) => { o.geometry?.dispose(); });
+      heart.add(wrap); real = wrap;
+      if (gltf.animations.length) { mixer = new THREE.AnimationMixer(model); gltf.animations.forEach((a) => mixer.clipAction(a).play()); }
+      return { hasAnimation: !!mixer };
+    },
     update(dt) {
       t += dt;
       ra.update(dt); ba.update(dt);
-      heart.scale.setScalar(1 + 0.05 * beatJS(t));
+      if (mixer) mixer.update(dt);                                   // animation fournie par le modèle
+      else heart.scale.setScalar(1 + 0.05 * beatJS(t));              // sinon battement par shader/JS
     },
   };
 }
