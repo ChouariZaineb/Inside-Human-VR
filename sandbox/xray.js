@@ -19,6 +19,18 @@ const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2, 4, 6)
 const body = createXrayBody({ branches: Number(q.get('b')) || 1 });
 scene.add(body.group);
 
+// Vrai cœur : public/assets/models/heart.glb (ignoré avec ?procedural)
+// Réglages : ?hs=1.9 (taille) · ?rx= ?ry= ?rz= (rotation en degrés) · ?dy=0.12 (hauteur)
+if (!q.has('procedural')) {
+  const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
+  const rad = (k, d) => num(k, d) * Math.PI / 180;
+  body.loadRealHeart('/assets/models/heart.glb', {
+    height: num('hs', 1.9), rotation: [rad('rx', 0), rad('ry', 180), rad('rz', 0)], position: [0, num('dy', 0.12), 0],
+  })
+  .then((r) => console.info('heart.glb chargé', r.hasAnimation ? '(animation incluse)' : ''))
+    .catch(() => console.info('heart.glb absent : cœur généré par code'));
+}
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 const VIEW = {
