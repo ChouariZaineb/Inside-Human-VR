@@ -23,6 +23,8 @@ import { BrainLevel } from './levels/BrainLevel.js';
 import { gameState } from './data/GameState.js';
 import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
+import { Voice } from './core/Voice.js';
+import { Effects } from './systems/Effects.js';
 import { registerServiceWorker, initNetworkBadge, initInstallButton } from './pwa.js';
 import { AudioManager } from './core/AudioManager.js';
 import { mountDashboard } from './systems/Dashboard.js';
@@ -105,6 +107,17 @@ function updateProgressSummary() {
 eventBus.on( EVENTS.MISSION_SUCCESS, updateProgressSummary );
 eventBus.on( EVENTS.LEVEL_UNLOCKED, updateProgressSummary );
 updateProgressSummary();
+
+// Ambiance lumineuse et effets de réussite/erreur, voix off (touche V). Le son (touche M) est créé plus haut.
+const fx = new Effects( { scene: engine.scene, camera: engine.camera } ).attach();
+engine.onUpdate( ( dt ) => fx.update( dt ) );
+let levelsContent = null;
+const voice = new Voice().attach( async ( id ) => {
+
+	levelsContent ??= await ( await fetch( `${import.meta.env.BASE_URL}assets/content/levels.json` ) ).json();
+	return levelsContent.levels.find( ( l ) => l.id === id );
+
+} );
 
 // Semaine 3 (Melek) : tableau de bord des résultats locaux.
 // Monté après restoreProgress() ; la PWA de Zaineb est inchangée.
@@ -223,7 +236,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence, audio };
+	window.app = { engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence, audio, fx, voice };
 
 }
 

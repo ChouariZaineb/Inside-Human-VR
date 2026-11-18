@@ -8,11 +8,12 @@
 
 ## 1. Modèles 3D, textures et assets graphiques
 
-Un seul modèle externe est utilisé : le cœur `heart.glb` (NIH 3D, domaine public CC0). Les autres visuels sont générés par code (géométries Three.js et matériaux TSL).
+Modèles externes utilisés : le cœur `heart.glb` (NIH 3D, domaine public CC0). Les autres visuels sont générés par code (géométries Three.js et matériaux TSL).
 
 | Asset | Source originale | Auteur | Licence | Modifications / méthode |
 |---|---|---|---|---|
 | Cœur réaliste `heart.glb` | https://3d.nih.gov/entries/3DPX-022787 (NIH 3D, « Human Heart 3d Model », ID 3DPX-022787) | Sourav Pan (données sources : Biology Notes Online) | Domaine public, CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) | Mise à l'échelle, rotation de 180° et recentrage dans le code (`loadRealHeart`) ; battement ajouté par code ; textures incluses dans le modèle |
+| Vaisseaux sanguins (artères rouges, veines bleues) `vessels.glb` | https://sketchfab.com/3d-models/angiology-0caae8f894cc40b69f3f78adf14b9665 (« Angiology ») | Z-Anatomy (https://sketchfab.com/Z-Anatomy) | CC BY-SA 4.0 (http://creativecommons.org/licenses/by-sa/4.0/) | Muscles, cartilages et ligaments retirés (seuls les matériaux Artery et Vein sont conservés), simplification 4 065 841 → 196 289 triangles, compression Draco (glTF-Transform), 119 Mo → 0,7 Mo ; mise à l'échelle et placement dans le code. Modèle modifié : reste sous CC BY-SA 4.0 (partage dans les mêmes conditions). Crédit : « This work is based on « Angiology » by Z-Anatomy, licensed under CC-BY-SA-4.0. » |
 | Cœur de secours généré par code | `src/systems/ProceduralHeart.js` | Équipe | Code du projet | Ellipsoïdes fusionnés, vaisseaux en `TubeGeometry`, coronaires plaquées sur le muscle par raycast ; affiché si `heart.glb` est absent |
 | Corps « radio » (silhouette, côtes, sternum, colonne, poumons, réseau de vaisseaux) | Généré par code : `src/systems/XrayBody.js` | Équipe | Code du projet | Silhouette extrudée à partir d'un contour 2D dessiné à la main, côtes et vaisseaux paramétriques |
 | Torse en verre et schéma de circulation | Généré par code : `src/systems/HeartAtlas.js` | Équipe | Code du projet | Fresnel, arbres pulmonaires, flèches de flux |

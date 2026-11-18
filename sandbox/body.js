@@ -1,15 +1,16 @@
-// Banc d'essai « corps réaliste » : /sandbox/body.html  (?webgl · ?view=exploded · ?focus=lungs · ?cam=x,y,z,tx,ty,tz)
+// Banc d'essai « corps réaliste » : /sandbox/body.html  (?view=exploded · ?focus=lungs · ?cam=x,y,z,tx,ty,tz)
 import * as THREE from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRealBody } from '../src/systems/RealBody.js';
 
 const q = new URLSearchParams(location.search);
-const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true, forceWebGL: q.has('webgl') });
+const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 await renderer.init();
+if (!renderer.backend.isWebGPUBackend) throw new Error('WebGPU est obligatoire : ce navigateur ou cette carte graphique ne le fournit pas (pas de repli WebGL).');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 100);
@@ -44,5 +45,5 @@ renderer.setAnimationLoop(() => {
   const dt = clock.getDelta();
   body.update(dt); controls.update(); renderer.render(scene, camera);
   frames++; acc += dt;
-  if (acc > 0.5) { hud.textContent = `${renderer.backend?.isWebGPU || renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2'} · ${Math.round(frames / acc)} i/s · parties : ${Object.keys(body.parts).join(', ')}`; frames = 0; acc = 0; }
+  if (acc > 0.5) { hud.textContent = `${'WebGPU'} · ${Math.round(frames / acc)} i/s · parties : ${Object.keys(body.parts).join(', ')}`; frames = 0; acc = 0; }
 });
