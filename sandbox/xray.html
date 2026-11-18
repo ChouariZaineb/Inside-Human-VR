@@ -21,7 +21,7 @@
     window.addEventListener('error', function (e) { show('ERREUR: ' + e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : '')); });
     window.addEventListener('unhandledrejection', function (e) { show('PROMESSE REJETÉE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason)); });
     var ce = console.error; console.error = function () { show('console.error: ' + Array.prototype.join.call(arguments, ' ')); ce.apply(console, arguments); };
-    setTimeout(function () { if (!document.getElementById('hud').textContent) show("La scène ne s'est pas initialisée après 8 s. Essayez ?webgl à la fin de l'adresse."); }, 8000);
+    setTimeout(function () { if (!document.getElementById('hud').textContent) show("La scène ne s'est pas initialisée après 8 s. WebGPU est obligatoire : vérifiez chrome://gpu."); }, 8000);
   })();
 </script>
 <div class="tag">Circulation du sang</div>

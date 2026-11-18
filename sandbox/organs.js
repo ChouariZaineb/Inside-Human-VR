@@ -1,30 +1,44 @@
-// Banc d'essai « organes » : /sandbox/organs.html  (?webgl pour forcer WebGL 2 · ?o=brain pour démarrer sur le cerveau)
+// Banc d'essai « organes » : /sandbox/organs.html  (?o=brain pour démarrer sur le cerveau)
 import * as THREE from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createLungs } from '../src/systems/LungsModel.js';
-import { createBrain, createNeuronNetwork } from '../src/systems/BrainModel.js';
+import { createRealBody } from '../src/systems/RealBody.js';
+import { createNeuronNetwork } from '../src/systems/BrainModel.js';
 import { AudioManager } from '../src/core/AudioManager.js';
 import { Effects } from '../src/systems/Effects.js';
 import { Voice } from '../src/core/Voice.js';
-import { breathRate } from '../src/shaders/breathing.js';
+import { breathRate, breathJS } from '../src/shaders/breathing.js';
 
 const q = new URLSearchParams(location.search);
-const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true, forceWebGL: q.has('webgl') });
+const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 await renderer.init();
+if (!renderer.backend.isWebGPUBackend) throw new Error('WebGPU est obligatoire : ce navigateur ou cette carte graphique ne le fournit pas (pas de repli WebGL).');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 100);
 scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x223366, 1.6));
 const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2, 4, 6); scene.add(key);
 
-const lungs = createLungs();
-const brain = createBrain({ glass: true });
+// Les organes sont des DONNÉES : modèles .glb (public/assets/models), jamais générés par code.
+const real = await createRealBody({ parts: ['lungs', 'brain'] });
+function placeOrgan(name, size) {
+  const part = real.parts[name];
+  delete real.parts[name];                       // on gère nous-mêmes la position (RealBody ne la touche plus)
+  const holder = new THREE.Group();
+  part.root.position.set(0, 0, 0);
+  holder.add(part.root);
+  holder.scale.setScalar(size / part.cfg.size);
+  return holder;
+}
+const lungs = { group: placeOrgan('lungs', 2.4), update() {} };
+const brain = { group: placeOrgan('brain', 2.0), update() {} };
+brain.group.traverse((o) => { if (o.isMesh) [].concat(o.material).forEach((m) => { m.transparent = true; m.opacity = 0.35; m.depthWrite = false; }); });
 const net = createNeuronNetwork([[-0.7, 0.05, 0.1], [-0.25, 0.3, 0.2], [0.25, 0.1, 0.15], [0.7, 0.3, 0.05]], { somaRadius: 0.07, speed: 1.0 });
-const brainGroup = new THREE.Group(); brainGroup.add(brain.group, net.group);
+const brainGroup = new THREE.Group(); brainGroup.add(net.group);
+brainGroup.add(brain.group);
 scene.add(lungs.group, brainGroup);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -58,15 +72,15 @@ addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; cam
 if (q.has('rate')) breathRate.value = Number(q.get('rate'));
 show(q.get('o') || 'lungs');
 window.__ready?.();
-const hud = document.getElementById('hud'), clock = new THREE.Clock(); let frames = 0, acc = 0, auto = 0;
+const hud = document.getElementById('hud'), clock = new THREE.Clock(); let frames = 0, acc = 0, auto = 0, t = 0; const lungsBase = lungs.group.scale.x;
 window.__t = 0;
 renderer.setAnimationLoop(() => {
   const dt = q.has('step') ? 1 / 30 : clock.getDelta();
   window.__t += dt;
-  fx.update(dt); lungs.update(dt); brain.update(dt); net.update(dt); audio.update(dt);
+  t += dt; lungs.group.scale.setScalar(lungsBase * (1 + 0.05 * breathJS(t))); fx.update(dt); lungs.update(dt); brain.update(dt); net.update(dt); audio.update(dt);
   if (organ === 'brain' && (auto += dt) > 4) { auto = 0; fire(); }
   controls.update();
   renderer.render(scene, camera);
   frames++; acc += dt;
-  if (acc > 0.5) { hud.textContent = `${renderer.backend?.isWebGPU || renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2'} · ${Math.round(frames / acc)} i/s · poumons ${lungs.breath.toFixed(2)}`; frames = 0; acc = 0; }
+  if (acc > 0.5) { hud.textContent = `${'WebGPU'} · ${Math.round(frames / acc)} i/s`; frames = 0; acc = 0; }
 });

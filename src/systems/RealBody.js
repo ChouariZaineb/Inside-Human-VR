@@ -23,9 +23,11 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
  */
 export const PARTS = {
   skeleton: { url: 'assets/models/skeleton.glb', fit: 'y', size: 1.8, rot: [0, 0, 0], inBody: [0, 0.9, 0], exploded: [0, 0.9, 0] },
-  lungs:    { url: 'assets/models/lungs.glb',    fit: 'y', size: 0.36, rot: [0, 0, 0], inBody: [0, 1.36, 0.03], exploded: [0.75, 1.25, 0.1] },
-  brain:    { url: 'assets/models/brain.glb',    fit: 'x', size: 0.15, rot: [0, 0, 0], inBody: [0, 1.655, -0.012], exploded: [0, 2.15, 0] },
-  heart:    { url: 'assets/models/heart.glb',    fit: 'y', size: 0.12, rot: [0, Math.PI, 0], inBody: [0.025, 1.32, 0.05], exploded: [-0.75, 1.25, 0.1] },
+  lungs:    { url: 'assets/models/lungs.glb',    fit: 'y', size: 0.42, rot: [0, 0, 0], inBody: [0, 1.41, -0.035], exploded: [0.75, 1.25, 0.1] },
+  brain:    { url: 'assets/models/brain.glb',    fit: 'z', size: 0.165, rot: [0, 0, 0], inBody: [0, 1.675, -0.025], exploded: [0, 2.15, 0] },
+  // Vaisseaux sanguins (artères rouges + veines bleues) : Angiology (Z-Anatomy, CC BY-SA 4.0), réduit à 196 000 triangles. Absent = ignoré.
+  vessels:  { url: 'assets/models/vessels.glb',  fit: 'y', size: 1.8, rot: [0, 0, 0], inBody: [0, 0.9, 0], exploded: [0, 0.9, 0] },
+  heart:    { url: 'assets/models/heart.glb',    fit: 'y', size: 0.15, rot: [0, Math.PI, 0], inBody: [0.05, 1.32, 0.045], exploded: [-0.75, 1.25, 0.1] },
 };
 
 const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath(`${import.meta.env?.BASE_URL ?? './'}draco/`));

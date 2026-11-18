@@ -13,6 +13,7 @@ Aucun modèle 3D externe n'est utilisé à ce jour.
 | Vaisseaux sanguins et réseau de branches | Générés par code (tubes paramétriques, `BodyAtlas.js`, `HeartAtlas.js`) | Création du projet |
 | Poumons, bronches, circulation pulmonaire | Générés par code (`src/systems/LungsModel.js`) | Création du projet |
 | Cerveau, cervelet, neurones | Générés par code (`src/systems/BrainModel.js`) | Création du projet |
+| Vaisseaux sanguins (`vessels.glb`) | « Angiology » par Z-Anatomy, https://sketchfab.com/3d-models/angiology-0caae8f894cc40b69f3f78adf14b9665, modifié (artères et veines seulement, simplifié) | CC BY-SA 4.0 |
 | Globules rouges | Géométrie de révolution générée par code (`src/systems/Particles.js`) | Création du projet |
 
 Choix technique : des modèles procéduraux, légers (quelques ko au lieu de plusieurs Mo), sans dépendance de licence,

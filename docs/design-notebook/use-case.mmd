@@ -1,0 +1,22 @@
+flowchart LR
+  E(["Élève / visiteur"])
+  P(["Enseignant"])
+  subgraph APP["Inside Human VR"]
+    U1(["Choisir un organe"])
+    U2(["Explorer l'organe et pointer ses éléments"])
+    U3(["Accomplir la mission du niveau"])
+    U4(["Écouter les explications à voix haute"])
+    U5(["Consulter le score et la progression"])
+    U6(["Reprendre la partie"])
+    U7(["Entrer en VR ou jouer en mode bureau"])
+  end
+  E --> U7
+  E --> U1
+  E --> U2
+  E --> U3
+  E --> U4
+  E --> U5
+  E --> U6
+  P --> U5
+  U1 -. "inclut" .-> U2
+  U3 -. "étend : erreur" .-> U2

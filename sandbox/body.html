@@ -20,7 +20,7 @@
     window.addEventListener('error', function (e) { show('ERREUR: ' + e.message); });
     window.addEventListener('unhandledrejection', function (e) { show('PROMESSE REJETÉE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason)); });
     window.__ready = function () { ready = true; };
-    setTimeout(function () { if (!ready) show("Scène non initialisée après 15 s. Essayez ?webgl."); }, 15000);
+    setTimeout(function () { if (!ready) show("Scène non initialisée après 15 s. WebGPU est obligatoire : vérifiez chrome://gpu."); }, 15000);
   })();
 </script>
 <div class="bar">
