@@ -23,6 +23,9 @@ import { BrainLevel } from './levels/BrainLevel.js';
 import { gameState } from './data/GameState.js';
 import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
+import { AudioManager } from './core/AudioManager.js';
+import { Voice } from './core/Voice.js';
+import { Effects } from './systems/Effects.js';
 import { registerServiceWorker, initNetworkBadge, initInstallButton } from './pwa.js';
 
 const home = document.getElementById( 'home' );
@@ -84,6 +87,18 @@ function updateProgressSummary() {
 eventBus.on( EVENTS.MISSION_SUCCESS, updateProgressSummary );
 eventBus.on( EVENTS.LEVEL_UNLOCKED, updateProgressSummary );
 updateProgressSummary();
+
+// Son (touche M = muet), ambiance lumineuse et effets de réussite/erreur, voix off (touche V).
+const audio = new AudioManager().attach( engine );
+const fx = new Effects( { scene: engine.scene, camera: engine.camera } ).attach();
+engine.onUpdate( ( dt ) => fx.update( dt ) );
+let levelsContent = null;
+const voice = new Voice().attach( async ( id ) => {
+
+	levelsContent ??= await ( await fetch( `${import.meta.env.BASE_URL}assets/content/levels.json` ) ).json();
+	return levelsContent.levels.find( ( l ) => l.id === id );
+
+} );
 
 // 2. Entrées : VR et mode bureau
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
@@ -184,7 +199,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence };
+	window.app = { audio, fx, voice, engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence };
 
 }
 
