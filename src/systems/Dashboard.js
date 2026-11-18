@@ -71,3 +71,66 @@ export function formatDashboardTime(seconds) {
   const rest = total % 60;
   return minutes ? `${minutes} min ${String(rest).padStart(2, '0')} s` : `${rest} s`;
 }
+
+/** Construit un élément DOM sans injecter de HTML provenant des données. */
+function makeElement(document, tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+/** Affiche le tableau de bord dans un conteneur HTML de la page d'accueil. */
+export function renderDashboard(container, data) {
+  if (!container) return;
+  const doc = container.ownerDocument;
+  const summary = makeElement(doc, 'div', 'dashboard-summary');
+
+  for (const [label, value] of [
+    ['Missions réussies', `${data.completedCount} / ${data.levelCount}`],
+    ['Score moyen', data.averageScore === null ? '—' : `${data.averageScore} / 100`],
+    ['Temps des missions', data.completedCount ? formatDashboardTime(data.totalTimeSeconds) : '—'],
+  ]) {
+    const card = makeElement(doc, 'div', 'dashboard-stat');
+    card.append(
+      makeElement(doc, 'span', 'dashboard-stat-label', label),
+      makeElement(doc, 'strong', 'dashboard-stat-value', value),
+    );
+    summary.append(card);
+  }
+
+  const list = makeElement(doc, 'ol', 'dashboard-results');
+  for (const level of data.levels) {
+    const item = makeElement(doc, 'li', 'dashboard-result');
+    const heading = makeElement(doc, 'h4', null, level.label);
+    const state = level.completed ? `Réussi · ${level.score ?? '—'}/100`
+      : level.unlocked ? 'Accessible · pas encore terminé' : 'Verrouillé';
+    const detail = makeElement(doc, 'p', 'dashboard-result-meta', state);
+    const time = makeElement(doc, 'p', 'dashboard-result-meta',
+      `Temps : ${formatDashboardTime(level.timeSeconds)} · Erreurs : ${level.errors ?? '—'}`);
+    const notion = makeElement(doc, 'p', 'dashboard-notion',
+      level.completed ? `Notion abordée : ${level.notion}` : 'Notion à découvrir après la mission.');
+    item.append(heading, detail, time, notion);
+    list.append(item);
+  }
+
+  const note = makeElement(doc, 'p', 'dashboard-note',
+    'Résultats enregistrés localement dans ce navigateur. Une notion abordée ne remplace pas une évaluation des connaissances.');
+  container.replaceChildren(summary, list, note);
+}
+
+/**
+ * Connecte l'affichage au score et aux niveaux débloqués.
+ * @returns {() => void} Permet de se désabonner si l'interface est détruite.
+ */
+export function mountDashboard({ container, gameState, eventBus }) {
+  if (!container) return () => {};
+  const refresh = () => renderDashboard(container, buildDashboardData(gameState));
+  const offSuccess = eventBus.on('missionSuccess', refresh);
+  const offUnlocked = eventBus.on('levelUnlocked', refresh);
+  refresh(); // Après restoreProgress() : résultats déjà enregistrés visibles.
+  return () => {
+    offSuccess();
+    offUnlocked();
+  };
+}

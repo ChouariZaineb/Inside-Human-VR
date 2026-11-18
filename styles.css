@@ -98,3 +98,22 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
   background: transparent; color: #63e5ee; border: 1px solid rgba(99, 229, 238, .5);
 }
 .install-button:hover { background: rgba(99, 229, 238, .12); }
+
+
+/* ---------- Tableau de bord pédagogique (Melek, semaine 3) ---------- */
+.dashboard-panel { margin-top: 18px; border: 1px solid rgba(99, 229, 238, .28); border-radius: 16px; background: rgba(5, 22, 37, .62); }
+.dashboard-panel summary { padding: 16px; cursor: pointer; font-size: .96rem; font-weight: 750; color: #d5f7fa; }
+.dashboard-panel summary:focus-visible { outline: 3px solid #f5f9ff; outline-offset: 3px; }
+.dashboard-panel summary span { display: block; color: #91aec3; font-size: .76rem; font-weight: 450; margin-top: 5px; }
+.dashboard-content { padding: 0 14px 14px; }
+.dashboard-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.dashboard-stat { border-radius: 10px; background: rgba(26, 66, 84, .55); padding: 10px 8px; min-width: 0; }
+.dashboard-stat-label { display: block; font-size: .66rem; color: #a5bdcf; margin-bottom: 8px; }
+.dashboard-stat-value { display: block; font-size: 1.02rem; color: #70e5ec; overflow-wrap: anywhere; }
+.dashboard-results { padding: 0; margin: 0; display: grid; gap: 9px; list-style: none; }
+.dashboard-result { padding: 12px; border: 1px solid rgba(130, 185, 207, .16); border-radius: 12px; background: rgba(6, 24, 40, .75); }
+.dashboard-result h4 { margin: 0 0 6px; font-size: .91rem; }
+.dashboard-result-meta { margin: 4px 0; font-size: .78rem; color: #adcadb; }
+.dashboard-notion { margin: 8px 0 0; line-height: 1.5; font-size: .76rem; color: #89e0da; }
+.dashboard-note { margin: 12px 2px 0; font-size: .7rem; line-height: 1.5; color: #9eb5c5; }
+@media (max-width: 450px) { .dashboard-summary { grid-template-columns: 1fr; } }
