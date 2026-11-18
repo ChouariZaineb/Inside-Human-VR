@@ -25,6 +25,7 @@ import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
 import { registerServiceWorker, initNetworkBadge, initInstallButton } from './pwa.js';
 import { AudioManager } from './core/AudioManager.js';
+import { mountDashboard } from './systems/Dashboard.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
@@ -104,6 +105,14 @@ function updateProgressSummary() {
 eventBus.on( EVENTS.MISSION_SUCCESS, updateProgressSummary );
 eventBus.on( EVENTS.LEVEL_UNLOCKED, updateProgressSummary );
 updateProgressSummary();
+
+// Semaine 3 (Melek) : tableau de bord des résultats locaux.
+// Monté après restoreProgress() ; la PWA de Zaineb est inchangée.
+mountDashboard({
+  container: document.getElementById('dashboard-content'),
+  gameState,
+  eventBus,
+});
 
 // 2. Entrées : VR et mode bureau
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
