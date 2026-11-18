@@ -11,6 +11,8 @@ Aucun modèle 3D externe n'est utilisé à ce jour.
 | Cœur anatomique (ventricules, oreillettes, gros vaisseaux, coronaires) | Généré par code (`src/systems/ProceduralHeart.js`) | Création du projet |
 | Corps humain, cage thoracique, poumons | Générés par code (`src/systems/BodyAtlas.js`, `XrayBody.js`) | Création du projet |
 | Vaisseaux sanguins et réseau de branches | Générés par code (tubes paramétriques, `BodyAtlas.js`, `HeartAtlas.js`) | Création du projet |
+| Poumons, bronches, circulation pulmonaire | Générés par code (`src/systems/LungsModel.js`) | Création du projet |
+| Cerveau, cervelet, neurones | Générés par code (`src/systems/BrainModel.js`) | Création du projet |
 | Globules rouges | Géométrie de révolution générée par code (`src/systems/Particles.js`) | Création du projet |
 
 Choix technique : des modèles procéduraux, légers (quelques ko au lieu de plusieurs Mo), sans dépendance de licence,
@@ -18,7 +20,8 @@ et qui permettent d'animer le battement et la couleur du sang (rouge/bleu) direc
 Un modèle `public/assets/models/heart.glb` peut remplacer le cœur généré : il serait alors ajouté dans ce tableau.
 
 ## Sons
-Aucun son pour l'instant (audio spatialisé prévu au sprint 5).
+Aucun fichier audio : les sons sont synthétisés par code (Web Audio API, `src/core/AudioManager.js`).
+La voix des explications est la synthèse vocale du navigateur (Web Speech API, `src/core/Voice.js`).
 
 | Fichier | Titre | Auteur | Licence | Lien |
 |---|---|---|---|---|
