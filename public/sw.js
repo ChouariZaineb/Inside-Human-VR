@@ -10,7 +10,7 @@
  * Au premier chargement, la page s'affiche AVANT que le Service Worker soit actif : pwa.js lui envoie
  * alors la liste des fichiers déjà chargés (message CACHE_URLS) pour qu'il les range aussi.
  */
-const CACHE = 'inside-human-vr-v2';
+const CACHE = 'inside-human-vr-v3';
 
 /** Coquille de l'application, rangée dès l'installation. */
 const APP_SHELL = [
@@ -21,7 +21,17 @@ const APP_SHELL = [
 	'./icons/icon-192.png',
 	'./icons/icon-512.png',
 	'./icons/icon-maskable-512.png',
-	'./assets/content/levels.json'
+	'./assets/content/levels.json',
+	// Modèles 3D et décodeur Draco : rangés dès l'installation, sinon une coupure réseau pendant leur
+	// téléchargement laisserait la scène d'accueil sans corps hors ligne.
+	'./assets/models/skeleton.glb',
+	'./assets/models/lungs.glb',
+	'./assets/models/brain.glb',
+	'./assets/models/heart.glb',
+	'./assets/models/vessels.glb',
+	'./draco/draco_wasm_wrapper.js',
+	'./draco/draco_decoder.wasm',
+	'./draco/draco_decoder.js'
 ];
 
 // Installation : on range la coquille de l'application.

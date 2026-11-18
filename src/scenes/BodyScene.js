@@ -143,7 +143,7 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 			}
 		} );
 
-	} ).catch( ( error ) => console.error( 'Corps indisponible :', error.message ?? error ) );
+	} ).catch( ( error ) => console.warn( 'Corps indisponible :', error.message ?? error ) );
 
 	// 2. Plateforme ronde sous le corps et zone de déplacement.
 	const platform = new THREE.Mesh(
