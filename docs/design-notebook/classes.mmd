@@ -1,0 +1,37 @@
+classDiagram
+  class Engine { +scene +camera +onUpdate(cb) }
+  class LevelManager { +start(id) +unlock(id) }
+  class BaseLevel { +id +onEnter() +onUpdate(dt) +onExit() }
+  class HeartLevel
+  class LungsLevel
+  class BrainLevel
+  class EventBus { +on(event, cb) +emit(event, data) }
+  class GameState { +phase +score +toJSON() }
+  class Storage { +save(state) +load() }
+  class UIPanel { +show(text) }
+  class AudioManager { +attach(engine) +setOrgan(id) +playSuccess() +playError() +toggleMute() }
+  class Voice { +speak(text) +readLevel(content) +toggle() }
+  class Effects { +setOrgan(id) +success() +error() +update(dt) }
+  class LungsModel { +createLungs() }
+  class BrainModel { +createBrain() +createNeuronNetwork(points) }
+  class SignalChain { +fire(cb) +update(dt) +reset() }
+  class BloodParticles { +update(dt) }
+  class Shaders { <<TSL>> breathing / neuronSignal / bloodFlow / tissuePulse }
+  BaseLevel <|-- HeartLevel
+  BaseLevel <|-- LungsLevel
+  BaseLevel <|-- BrainLevel
+  LevelManager o-- BaseLevel
+  LevelManager --> EventBus
+  Engine --> LevelManager
+  BaseLevel --> GameState
+  BaseLevel --> UIPanel
+  GameState --> Storage
+  AudioManager ..> EventBus : écoute
+  Voice ..> EventBus : écoute
+  Effects ..> EventBus : écoute
+  LungsLevel --> LungsModel
+  BrainLevel --> BrainModel
+  LungsModel --> BloodParticles
+  LungsModel --> Shaders
+  BrainModel --> SignalChain
+  BrainModel --> Shaders
