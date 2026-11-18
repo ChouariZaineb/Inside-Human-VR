@@ -23,10 +23,11 @@ import { BrainLevel } from './levels/BrainLevel.js';
 import { gameState } from './data/GameState.js';
 import { eventBus, EVENTS } from './systems/EventBus.js';
 import { restoreProgress, bindProgressAutoSave } from './data/Storage.js';
-import { AudioManager } from './core/AudioManager.js';
 import { Voice } from './core/Voice.js';
 import { Effects } from './systems/Effects.js';
 import { registerServiceWorker, initNetworkBadge, initInstallButton } from './pwa.js';
+import { AudioManager } from './core/AudioManager.js';
+import { mountDashboard } from './systems/Dashboard.js';
 
 const home = document.getElementById( 'home' );
 const status = document.getElementById( 'status' );
@@ -56,6 +57,25 @@ try {
 	throw error;
 
 }
+
+// Initialiser le système audio
+const audio = new AudioManager({ eventBus });
+
+// Connecter l'audio au moteur Three.js
+audio.attach(engine);
+
+let activeAudioLevel = 'home';
+
+eventBus.on(EVENTS.LEVEL_STARTED, ({ levelId }) => {
+  activeAudioLevel = levelId;
+
+  // Ne pas jouer l'ambiance lorsque le menu est affiché.
+  if (!home.hidden) {
+    audio.setOrgan(null);
+  }
+});
+
+console.log("AudioManager connecté au moteur");
 
 // Restaurer les niveaux déjà réussis AVANT toute navigation (IndexedDB, EF-10).
 await restoreProgress( gameState );
@@ -88,8 +108,7 @@ eventBus.on( EVENTS.MISSION_SUCCESS, updateProgressSummary );
 eventBus.on( EVENTS.LEVEL_UNLOCKED, updateProgressSummary );
 updateProgressSummary();
 
-// Son (touche M = muet), ambiance lumineuse et effets de réussite/erreur, voix off (touche V).
-const audio = new AudioManager().attach( engine );
+// Ambiance lumineuse et effets de réussite/erreur, voix off (touche V). Le son (touche M) est créé plus haut.
 const fx = new Effects( { scene: engine.scene, camera: engine.camera } ).attach();
 engine.onUpdate( ( dt ) => fx.update( dt ) );
 let levelsContent = null;
@@ -99,6 +118,14 @@ const voice = new Voice().attach( async ( id ) => {
 	return levelsContent.levels.find( ( l ) => l.id === id );
 
 } );
+
+// Semaine 3 (Melek) : tableau de bord des résultats locaux.
+// Monté après restoreProgress() ; la PWA de Zaineb est inchangée.
+mountDashboard({
+  container: document.getElementById('dashboard-content'),
+  gameState,
+  eventBus,
+});
 
 // 2. Entrées : VR et mode bureau
 const xr = new XRManager( engine, document.getElementById( 'btn-vr' ) );
@@ -121,8 +148,18 @@ const teleport = new Teleport( engine, interaction );
 const manipulation = new Manipulation( engine, xr, desktop, interaction );
 
 // 4. Écran d'accueil : caché pendant la VR ou le mode bureau.
-desktop.addEventListener( 'lock', () => { home.hidden = true; } );
-desktop.addEventListener( 'unlock', () => { home.hidden = false; } );
+
+// Entrée dans le mode bureau : reprendre le son du niveau
+desktop.addEventListener('lock', () => {
+  home.hidden = true;
+  audio.setOrgan(activeAudioLevel);
+});
+
+// Sortie du mode bureau : arrêter l'ambiance
+desktop.addEventListener('unlock', () => {
+  home.hidden = false;
+  audio.setOrgan(null);
+});
 
 xr.addEventListener( 'sessionstart', () => {
 
@@ -199,7 +236,7 @@ if ( import.meta.env.DEV ) {
 	engine.onUpdate( () => stats.update() );
 
 	// Accès depuis la console du navigateur pour déboguer : window.app.engine, etc.
-	window.app = { audio, fx, voice, engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence };
+	window.app = { engine, xr, desktop, interaction, teleport, manipulation, levels, gameState, persistence, audio, fx, voice };
 
 }
 
