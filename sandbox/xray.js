@@ -1,15 +1,16 @@
-// Banc d'essai « corps en radio » : /sandbox/xray.html   (?webgl pour forcer WebGL 2 · ?spin pour rotation lente)
+// Banc d'essai « corps en radio » : /sandbox/xray.html   (?spin pour rotation lente)
 import * as THREE from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createXrayBody } from '../src/systems/XrayBody.js';
 
 const q = new URLSearchParams(location.search);
-const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true, forceWebGL: q.has('webgl') });
+const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 await renderer.init();
+if (!renderer.backend.isWebGPUBackend) throw new Error('WebGPU est obligatoire : ce navigateur ou cette carte graphique ne le fournit pas (pas de repli WebGL).');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 100);
@@ -61,5 +62,5 @@ renderer.setAnimationLoop(() => {
   controls.update();
   renderer.render(scene, camera);
   frames++; acc += dt;
-  if (acc > 0.5) { hud.textContent = `${renderer.backend?.isWebGPU || renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2'} · ${Math.round(frames / acc)} i/s · touches 1 2 3 : vues`; frames = 0; acc = 0; }
+  if (acc > 0.5) { hud.textContent = `${'WebGPU'} · ${Math.round(frames / acc)} i/s · touches 1 2 3 : vues`; frames = 0; acc = 0; }
 });

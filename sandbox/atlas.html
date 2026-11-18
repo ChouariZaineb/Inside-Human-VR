@@ -25,7 +25,7 @@
     window.addEventListener('unhandledrejection', function (e) { show('PROMESSE REJETÉE: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason)); });
     var ce = console.error; console.error = function () { show('console.error: ' + Array.prototype.join.call(arguments, ' ')); ce.apply(console, arguments); };
     var cw = console.warn; console.warn = function () { var m = Array.prototype.join.call(arguments, ' '); if (/webgpu|shader|wgsl|node/i.test(m)) show('avertissement: ' + m); cw.apply(console, arguments); };
-    setTimeout(function () { if (!document.getElementById('tag').textContent) show("La scène ne s'est pas initialisée après 6 s (aucune erreur levée). Essayez ?webgl à la fin de l'adresse."); }, 6000);
+    setTimeout(function () { if (!document.getElementById('tag').textContent) show("La scène ne s'est pas initialisée après 6 s (aucune erreur levée). WebGPU est obligatoire : vérifiez chrome://gpu."); }, 6000);
   })();
 </script>
 <div class="tag" id="tag"></div>

@@ -1,16 +1,17 @@
 // Banc d'essai « style vidéo » : /sandbox/atlas.html
-// Paramètres : ?mode=schema · ?webgl · ?post=1 (vue postérieure) · ?rx=90&ry=0&rz=0 (orientation du heart.glb, en degrés)
+// Paramètres : ?mode=schema · ?post=1 (vue postérieure) · ?rx=90&ry=0&rz=0 (orientation du heart.glb, en degrés)
 import * as THREE from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createHeartAtlas } from '../src/systems/HeartAtlas.js';
 
 const q = new URLSearchParams(location.search);
-const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true, forceWebGL: q.has('webgl') });
+const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x000000, 0);
 document.body.appendChild(renderer.domElement);
 await renderer.init();
+if (!renderer.backend.isWebGPUBackend) throw new Error('WebGPU est obligatoire : ce navigateur ou cette carte graphique ne le fournit pas (pas de repli WebGL).');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 100);
@@ -85,5 +86,5 @@ renderer.setAnimationLoop(() => {
     l.el.style.left = `${(tmp.x * 0.5 + 0.5) * innerWidth}px`; l.el.style.top = `${(-tmp.y * 0.5 + 0.5) * innerHeight}px`;
   }
   frames++; acc += dt;
-  if (acc > 0.5) { hud.textContent = `${renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2'} · ${Math.round(frames / acc)} i/s · H : gros plan cœur · V : vaisseaux`; frames = 0; acc = 0; }
+  if (acc > 0.5) { hud.textContent = `${'WebGPU'} · ${Math.round(frames / acc)} i/s · H : gros plan cœur · V : vaisseaux`; frames = 0; acc = 0; }
 });
