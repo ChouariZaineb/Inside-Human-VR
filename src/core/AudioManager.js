@@ -311,12 +311,21 @@ function makeNoise(ctx) {
 }
 
 /** Source spatialisée (HRTF : l'oreille perçoit la direction en casque). */
+
 function makePanner(ctx) {
   const p = ctx.createPanner();
-  p.panningModel = 'HRTF'; p.distanceModel = 'inverse';
-  p.refDistance = 1.2; p.rolloffFactor = 1.1; p.maxDistance = 40;
+
+  p.panningModel = 'HRTF';
+  p.distanceModel = 'inverse';
+
+  // Rendre les sons audibles à une plus grande distance
+  p.refDistance = 10;
+  p.rolloffFactor = 0.2;
+  p.maxDistance = 100;
+
   return p;
 }
+
 
 /** Ambiance continue d'un organe ; renvoie { stop() }. */
 function makeAmbience(ctx, dest, noise, organ, droneHz) {
