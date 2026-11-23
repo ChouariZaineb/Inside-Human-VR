@@ -125,7 +125,7 @@ export function createLungs({ seed = 11, glass = true, blood = true, particles =
       tube.name = 'circulation-pulmonaire';
       group.add(tube);
       const cells = new BloodParticles(curve, { count: particles, radius: 0.032, worldSpeed: 0.55, cellSize: 0.05, profile });
-      group.add(cells.mesh);
+      group.add(cells.mesh, cells.plateletMesh);
       bloodSystems.push(cells);
       owned.push(tube);
     }

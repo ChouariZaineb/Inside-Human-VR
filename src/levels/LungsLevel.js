@@ -19,6 +19,7 @@
 import * as THREE from 'three/webgpu';
 import { BaseLevel } from './BaseLevel.js';
 import { PHASE } from '../data/GameState.js';
+import { BloodParticles } from '../systems/Particles.js';
 
 /** Nombre de molécules de chaque sorte à déplacer. */
 const MOLECULES_PER_KIND = 3;
@@ -58,6 +59,7 @@ export class LungsLevel extends BaseLevel {
 		this.mainPanel = null;
 		this.button = null;
 		this._flash = new Map();
+        this.capillaryCells = null;
 
 	}
 
@@ -68,6 +70,7 @@ export class LungsLevel extends BaseLevel {
 		this._buildBronchus();
 		this._buildAlveolus();
 		this._buildCapillary();
+		this._buildCapillaryCells();
 		this._buildMolecules();
 
 		this.mainPanel = this.addPanel( { width: 1.6, height: 1.0 }, PANEL_POS );
@@ -129,6 +132,26 @@ export class LungsLevel extends BaseLevel {
 		this._registerElement( 'capillary', capillary );
 
 	}
+
+    _buildCapillaryCells() {
+        // L'arc du capillaire est visible à droite de l'alvéole ; les cellules sont
+        // légèrement décalées vers la caméra pour être distinguables de la paroi.
+        const points = [];
+        for (let i = 0; i <= 28; i++) {
+            const t = Math.PI * i / 28;
+            points.push(new THREE.Vector3(
+                ALVEOLUS.x + CAPILLARY_RADIUS * Math.sin(t),
+                ALVEOLUS.y - CAPILLARY_RADIUS * Math.cos(t),
+                ALVEOLUS.z + 0.22,
+            ));
+        }
+        const curve = new THREE.CatmullRomCurve3(points);
+        this.capillaryCells = new BloodParticles(curve, {
+            count: 36, radius: 0.10, worldSpeed: 0.22, cellSize: 0.07,
+            plateletRatio: 0.11,
+        });
+        this.group.add(this.capillaryCells.mesh, this.capillaryCells.plateletMesh);
+    }
 
 	_buildMolecules() {
 
@@ -472,6 +495,8 @@ export class LungsLevel extends BaseLevel {
 
 	onUpdate( delta, elapsed ) {
 
+        this.capillaryCells?.update(delta);
+
 		// L'alvéole « respire » doucement.
 		const breath = 1 + 0.04 * Math.sin( elapsed * 1.6 );
 		this.elements.get( 'alveolus' ).scale.setScalar( breath );
@@ -528,6 +553,12 @@ export class LungsLevel extends BaseLevel {
 
 	onDispose() {
 
+        if (this.capillaryCells) {
+            this.group.remove(this.capillaryCells.mesh, this.capillaryCells.plateletMesh);
+            this.capillaryCells.dispose();
+            this.capillaryCells = null;
+        }
+
 		this.elements.clear();
 		this.molecules = [];
 		this.held = null;
@@ -537,33 +568,57 @@ export class LungsLevel extends BaseLevel {
 
 }
 
-// ---------- Modèles des molécules (générés par code) ----------
+// ---------- Modèles 3D pédagogiques des molécules ----------
+// Les couleurs suivent la convention CPK : oxygène rouge, carbone gris foncé.
+// O₂ : deux oxygènes avec une double liaison ; CO₂ : O=C=O, angle de 180°.
+// Les proportions sont agrandies pour être facilement manipulables en VR.
 
-function atom( color, x ) {
-
-	// Une géométrie par atome : BaseLevel.dispose() libère toutes les géométries du niveau.
-	const mesh = new THREE.Mesh( new THREE.SphereGeometry( 0.09, 20, 14 ), new THREE.MeshStandardMaterial( { color, roughness: 0.3, emissive: 0x000000 } ) );
-	mesh.position.x = x;
-	return mesh;
-
+function atom(color, x, element, radius = 0.08) {
+    const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 24, 18),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.36, metalness: 0.02 })
+    );
+    mesh.name = `atome-${element}`;
+    mesh.userData.element = element;
+    mesh.position.x = x;
+    return mesh;
 }
 
-/** O₂ : deux atomes d'oxygène (rouges). */
+function doubleBond(group, fromX, toX) {
+    // Deux bâtonnets parallèles pour la double liaison covalente.
+    const length = Math.abs(toX - fromX);
+    for (const offset of [-0.022, 0.022]) {
+        const bond = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.009, 0.009, length, 10),
+            new THREE.MeshStandardMaterial({ color: 0xc6ced8, roughness: 0.4 })
+        );
+        bond.name = 'double-liaison';
+        bond.rotation.z = Math.PI / 2;
+        bond.position.set((fromX + toX) / 2, offset, 0);
+        group.add(bond);
+    }
+}
+
+/** Deux atomes d'oxygène (O=O) ; géométrie simplifiée, pas une simulation quantique. */
 function createO2() {
-
-	const group = new THREE.Group();
-	group.name = 'O2';
-	group.add( atom( 0xe53935, - 0.075 ), atom( 0xe53935, 0.075 ) );
-	return group;
-
+    const group = new THREE.Group();
+    group.name = 'O2';
+    group.userData.formula = 'O₂';
+    group.userData.composition = { O: 2, C: 0 };
+    doubleBond(group, -0.1, 0.1);
+    group.add(atom(0xe53935, -0.1, 'O'), atom(0xe53935, 0.1, 'O'));
+    return group;
 }
 
-/** CO₂ : un atome de carbone (gris foncé) entre deux atomes d'oxygène (rouges). */
+/** Molécule linéaire : O=C=O, angle O-C-O de 180°. */
 function createCO2() {
-
-	const group = new THREE.Group();
-	group.name = 'CO2';
-	group.add( atom( 0x424242, 0 ), atom( 0xe53935, - 0.15 ), atom( 0xe53935, 0.15 ) );
-	return group;
-
+    const group = new THREE.Group();
+    group.name = 'CO2';
+    group.userData.formula = 'CO₂';
+    group.userData.composition = { O: 2, C: 1 };
+    doubleBond(group, -0.18, 0);
+    doubleBond(group, 0, 0.18);
+    group.add(atom(0x424242, 0, 'C', 0.07));
+    group.add(atom(0xe53935, -0.18, 'O'), atom(0xe53935, 0.18, 'O'));
+    return group;
 }
