@@ -17,9 +17,10 @@
  * Les textes viennent de levels.json (niveau « lungs ») : ici il n'y a que la logique et le décor.
  */
 import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BaseLevel } from './BaseLevel.js';
 import { PHASE } from '../data/GameState.js';
-import { BloodParticles } from '../systems/Particles.js';
+import { BloodParticles, preloadBloodModels } from '../systems/Particles.js';
 
 /** Nombre de molécules de chaque sorte à déplacer. */
 const MOLECULES_PER_KIND = 3;
@@ -70,8 +71,10 @@ export class LungsLevel extends BaseLevel {
 		this._buildBronchus();
 		this._buildAlveolus();
 		this._buildCapillary();
+		// Les cellules du niveau utilisent les GLB Blender dès leur création.
+		await preloadBloodModels();
 		this._buildCapillaryCells();
-		this._buildMolecules();
+		await this._buildMolecules();
 
 		this.mainPanel = this.addPanel( { width: 1.6, height: 1.0 }, PANEL_POS );
 		this.button = this.addPanel( { width: 1.0, height: 0.3, variant: 'button' }, BUTTON_POS );
@@ -153,15 +156,39 @@ export class LungsLevel extends BaseLevel {
         this.group.add(this.capillaryCells.mesh, this.capillaryCells.plateletMesh);
     }
 
-	_buildMolecules() {
+	async _buildMolecules() {
 
 		const kinds = this.content.mission.molecules; // [ { id: 'o2', depuis, vers, ... }, { id: 'co2', ... } ]
+		const loader = new GLTFLoader();
+		const models = new Map();
+
+		// Une seule requête par type de molécule ; les trois exemplaires utilisent des copies.
+		// Le niveau attend le chargement avant de devenir jouable (contrat BaseLevel.load).
+		await Promise.all( kinds.map( async ( kind ) => {
+
+			const filename = kind.id === 'co2' ? 'carbon_dioxide_co2.glb' : 'oxygen_o2.glb';
+			try {
+
+				const gltf = await loader.loadAsync( `${import.meta.env.BASE_URL}assets/models/${filename}` );
+				models.set( kind.id, gltf.scene );
+
+			} catch ( error ) {
+
+				// Fonctionnement dégradé : le joueur peut encore finir la mission sans fichier GLB.
+				console.warn( `[Poumons] Modèle Blender indisponible : ${filename}`, error );
+
+			}
+
+		} ) );
 
 		for ( const kind of kinds ) {
 
 			for ( let i = 0; i < MOLECULES_PER_KIND; i ++ ) {
 
-				const group = kind.id === 'co2' ? createCO2() : createO2();
+				const template = models.get( kind.id );
+				const group = template
+					? createBlenderMolecule( kind.id, template )
+					: ( kind.id === 'co2' ? createCO2() : createO2() );
 				const home = this._slot( kind.depuis, i );
 				group.position.copy( home );
 				group.userData.moleculeId = kind.id;
@@ -621,4 +648,54 @@ function createCO2() {
     group.add(atom(0x424242, 0, 'C', 0.07));
     group.add(atom(0xe53935, -0.18, 'O'), atom(0xe53935, 0.18, 'O'));
     return group;
+}
+
+
+/**
+ * Import Blender -> Three.js : modèle visible au format GLB, conservé dans le groupe
+ * manipulable existant. Une petite sphère transparente facilite la saisie au centre,
+ * même lorsque le rayon VR passe entre deux atomes (O=O, O=C=O).
+ * Les géométries/matériaux sont indépendants pour préserver les flashs par molécule.
+ */
+function createBlenderMolecule( kind, template ) {
+
+    const co2 = kind === 'co2';
+    const group = new THREE.Group();
+    group.name = co2 ? 'CO2' : 'O2';
+    group.userData.formula = co2 ? 'CO₂' : 'O₂';
+    group.userData.composition = co2 ? { O: 2, C: 1 } : { O: 2, C: 0 };
+    group.userData.modelSource = 'blender-glb';
+
+    const visual = template.clone( true );
+    visual.name = 'modele-blender-glb';
+    const bounds = new THREE.Box3().setFromObject( visual );
+    const dimensions = bounds.getSize( new THREE.Vector3() );
+    const center = bounds.getCenter( new THREE.Vector3() );
+    // Taille comparable aux anciennes molécules générées en JS : 36 cm / 52 cm
+    // dans la scène pédagogique, pour conserver les emplacements et le gameplay.
+    const scale = ( co2 ? 0.52 : 0.36 ) / Math.max( dimensions.x, 0.001 );
+    visual.scale.setScalar( scale );
+    visual.position.copy( center ).multiplyScalar( -scale );
+
+    visual.traverse( ( object ) => {
+
+        if ( ! object.isMesh ) return;
+        object.geometry = object.geometry.clone();
+        object.material = Array.isArray( object.material )
+            ? object.material.map( ( material ) => material.clone() )
+            : object.material.clone();
+        if ( /^Oxygen(?:_|\.|$)/i.test( object.name ) ) object.userData.element = 'O';
+        if ( /^Carbon(?:_|\.|$)/i.test( object.name ) ) object.userData.element = 'C';
+
+    } );
+
+    group.add( visual );
+    const pickZone = new THREE.Mesh(
+        new THREE.SphereGeometry( 0.11, 12, 8 ),
+        new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0, depthWrite: false } )
+    );
+    pickZone.name = 'zone-de-saisie-invisible';
+    group.add( pickZone );
+    return group;
+
 }

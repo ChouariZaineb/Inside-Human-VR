@@ -11,18 +11,23 @@ test('biologie : globules, plaquettes et molécules correctes dans les poumons',
     const molecules = level.molecules.map(({ group }) => {
       const elements = [];
       group.traverse((o) => { if (o.userData.element) elements.push(o.userData.element); });
-      return { formula: group.userData.formula, composition: group.userData.composition, elements };
+      return { formula: group.userData.formula, composition: group.userData.composition, source: group.userData.modelSource, elements };
     });
     return {
       redCells: cells.mesh.count,
       platelets: cells.plateletMesh.count,
+      redCellSource: cells.mesh.userData.modelSource,
+      plateletSource: cells.plateletMesh.userData.modelSource,
       molecules,
     };
   });
   expect(status.redCells).toBeGreaterThan(0);
   expect(status.platelets).toBeGreaterThan(0);
+  expect(status.redCellSource).toBe('blender-glb');
+  expect(status.plateletSource).toBe('blender-glb');
   expect(status.molecules).toHaveLength(6);
   for (const molecule of status.molecules) {
+    expect(molecule.source).toBe('blender-glb');
     if (molecule.formula === 'O₂') {
       expect(molecule.elements.sort()).toEqual(['O', 'O']);
       expect(molecule.composition).toEqual({ O: 2, C: 0 });

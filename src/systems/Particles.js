@@ -5,12 +5,55 @@
 //   dans la boucle : blood.update(dt);
 //   blood.dispose() à la sortie du niveau (un seul organe en mémoire).
 import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { mix, attribute, vec3 } from 'three/tsl';
 import { oxygen } from '../shaders/bloodFlow.js';
 import { beatNode } from '../shaders/tissuePulse.js';
 
 const FRAMES = 600;                 // échantillons précalculés le long de la courbe
+
+// Les GLB Blender ne sont téléchargés qu'une fois. Les systèmes de particules
+// gardent leurs InstancedMesh et leurs shaders ; seule la géométrie est remplacée.
+const BLOOD_ASSETS = [
+  ['erythrocyte', 'erythrocyte.glb'],
+  ['platelet', 'platelet.glb'],
+];
+let bloodAssetsPromise;
+let bloodAssets;
+
+function meshGeometryFromGLB(scene) {
+  scene.updateMatrixWorld(true);
+  let source = null;
+  scene.traverse((node) => { if (!source && node.isMesh) source = node; });
+  if (!source) throw new Error('Le fichier GLB ne contient aucun maillage');
+  const geometry = source.geometry.clone();
+  geometry.applyMatrix4(source.matrixWorld);
+  geometry.computeBoundingBox();
+  const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+  geometry.translate(-center.x, -center.y, -center.z);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** Précharge les géométries Blender, sans empêcher la scène de fonctionner en cas d'échec. */
+export function preloadBloodModels() {
+  if (bloodAssetsPromise) return bloodAssetsPromise;
+  const loader = new GLTFLoader();
+  bloodAssetsPromise = Promise.all(BLOOD_ASSETS.map(async ([key, file]) => {
+    try {
+      const model = await loader.loadAsync(`${import.meta.env.BASE_URL}assets/models/${file}`);
+      return [key, meshGeometryFromGLB(model.scene)];
+    } catch (error) {
+      console.warn(`[Sang] Modèle Blender indisponible : ${file}; géométrie de secours conservée.`, error);
+      return [key, null];
+    }
+  })).then((assets) => {
+    bloodAssets = Object.fromEntries(assets);
+    return bloodAssets;
+  });
+  return bloodAssetsPromise;
+}
 
 // Disque biconcave : creux central des deux côtés, bord périphérique plus épais.
 // Le sang désoxygéné reste ROUGE foncé (le bleu du schéma correspond à un code pédagogique).
@@ -71,6 +114,7 @@ export class BloodParticles {
     this.mesh = new THREE.InstancedMesh(geo, mat, count);
     this.mesh.frustumCulled = false;
     this.mesh.name = 'globules-rouges';
+    this.mesh.userData.modelSource = 'procedural';
 
     // Les plaquettes sont environ 20 fois moins nombreuses et ~3 fois plus petites.
     // Un second InstancedMesh conserve un faible coût de rendu GPU.
@@ -82,6 +126,16 @@ export class BloodParticles {
     );
     this.plateletMesh.frustumCulled = false;
     this.plateletMesh.name = 'plaquettes-sanguines';
+    this.plateletMesh.userData.modelSource = 'procedural';
+
+    // Une géométrie locale par système, afin de pouvoir disposer chaque InstancedMesh.
+    // Le modèle Blender du globule a un rayon ~1 ; celui de la plaquette ~0,32.
+    this._disposed = false;
+    this.cellSize = cellSize;
+    if (bloodAssets) this._applyBloodModels(bloodAssets);
+    else preloadBloodModels().then((assets) => {
+      if (!this._disposed) this._applyBloodModels(assets);
+    });
 
     // État par globule : position le long du vaisseau, décalage radial, vitesse, rotation propre.
     this.u = new Float32Array(count);
@@ -161,7 +215,30 @@ export class BloodParticles {
     if (this.profile) this.mesh.geometry.getAttribute('aOx').needsUpdate = true;
   }
 
+  _applyBloodModels(assets) {
+    if (assets.erythrocyte && this.mesh.userData.modelSource !== 'blender-glb') {
+      const geometry = assets.erythrocyte.clone();
+      geometry.scale(this.cellSize, this.cellSize, this.cellSize);
+      // Conserver le niveau d'oxygénation individuel du shader WebGPU existant.
+      geometry.setAttribute('aOx', new THREE.InstancedBufferAttribute(this.ox, 1));
+      const previous = this.mesh.geometry;
+      this.mesh.geometry = geometry;
+      previous.dispose();
+      this.mesh.userData.modelSource = 'blender-glb';
+    }
+    if (assets.platelet && this.plateletMesh.userData.modelSource !== 'blender-glb') {
+      const geometry = assets.platelet.clone();
+      const scale = this.cellSize * (0.36 / 0.32);
+      geometry.scale(scale, scale, scale);
+      const previous = this.plateletMesh.geometry;
+      this.plateletMesh.geometry = geometry;
+      previous.dispose();
+      this.plateletMesh.userData.modelSource = 'blender-glb';
+    }
+  }
+
   dispose() {
+    this._disposed = true;
     this.mesh.geometry.dispose();
     this.mesh.material.dispose();
     this.mesh.dispose();
