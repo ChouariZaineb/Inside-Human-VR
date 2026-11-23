@@ -139,7 +139,7 @@ function schema() {
     const curve = new THREE.CatmullRomCurve3(c.pts, false, 'centripetal');
     g.add(tube(curve, c.r, std(c.red ? RED : BLUE, { transparent: true, opacity: 0.85 }), 60));
     const b = new BloodParticles(curve, { count: Math.round(curve.getLength() * 22), radius: c.r, worldSpeed: 1.1, cellSize: c.r * 0.7, profile: makeProfile([[0, c.red ? 1 : 0]]) });
-    g.add(b.mesh); blood.push(b);
+    g.add(b.mesh, b.plateletMesh); blood.push(b);
   }
   return { group: g, blood, labels: [
     { text: 'Poumon droit', at: V(-3.4, -2.5, -0.5) }, { text: 'Poumon gauche', at: V(3.4, -2.5, -0.5) },

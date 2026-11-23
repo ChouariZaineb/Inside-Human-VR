@@ -17,8 +17,10 @@
  * Les textes viennent de levels.json (niveau « lungs ») : ici il n'y a que la logique et le décor.
  */
 import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BaseLevel } from './BaseLevel.js';
 import { PHASE } from '../data/GameState.js';
+import { BloodParticles, preloadBloodModels } from '../systems/Particles.js';
 
 /** Nombre de molécules de chaque sorte à déplacer. */
 const MOLECULES_PER_KIND = 3;
@@ -58,6 +60,7 @@ export class LungsLevel extends BaseLevel {
 		this.mainPanel = null;
 		this.button = null;
 		this._flash = new Map();
+        this.capillaryCells = null;
 
 	}
 
@@ -68,7 +71,10 @@ export class LungsLevel extends BaseLevel {
 		this._buildBronchus();
 		this._buildAlveolus();
 		this._buildCapillary();
-		this._buildMolecules();
+		// Les cellules du niveau utilisent les GLB Blender dès leur création.
+		await preloadBloodModels();
+		this._buildCapillaryCells();
+		await this._buildMolecules();
 
 		this.mainPanel = this.addPanel( { width: 1.6, height: 1.0 }, PANEL_POS );
 		this.button = this.addPanel( { width: 1.0, height: 0.3, variant: 'button' }, BUTTON_POS );
@@ -130,15 +136,59 @@ export class LungsLevel extends BaseLevel {
 
 	}
 
-	_buildMolecules() {
+    _buildCapillaryCells() {
+        // L'arc du capillaire est visible à droite de l'alvéole ; les cellules sont
+        // légèrement décalées vers la caméra pour être distinguables de la paroi.
+        const points = [];
+        for (let i = 0; i <= 28; i++) {
+            const t = Math.PI * i / 28;
+            points.push(new THREE.Vector3(
+                ALVEOLUS.x + CAPILLARY_RADIUS * Math.sin(t),
+                ALVEOLUS.y - CAPILLARY_RADIUS * Math.cos(t),
+                ALVEOLUS.z + 0.22,
+            ));
+        }
+        const curve = new THREE.CatmullRomCurve3(points);
+        this.capillaryCells = new BloodParticles(curve, {
+            count: 36, radius: 0.10, worldSpeed: 0.22, cellSize: 0.07,
+            plateletRatio: 0.11,
+        });
+        this.group.add(this.capillaryCells.mesh, this.capillaryCells.plateletMesh);
+    }
+
+	async _buildMolecules() {
 
 		const kinds = this.content.mission.molecules; // [ { id: 'o2', depuis, vers, ... }, { id: 'co2', ... } ]
+		const loader = new GLTFLoader();
+		const models = new Map();
+
+		// Une seule requête par type de molécule ; les trois exemplaires utilisent des copies.
+		// Le niveau attend le chargement avant de devenir jouable (contrat BaseLevel.load).
+		await Promise.all( kinds.map( async ( kind ) => {
+
+			const filename = kind.id === 'co2' ? 'carbon_dioxide_co2.glb' : 'oxygen_o2.glb';
+			try {
+
+				const gltf = await loader.loadAsync( `${import.meta.env.BASE_URL}assets/models/${filename}` );
+				models.set( kind.id, gltf.scene );
+
+			} catch ( error ) {
+
+				// Fonctionnement dégradé : le joueur peut encore finir la mission sans fichier GLB.
+				console.warn( `[Poumons] Modèle Blender indisponible : ${filename}`, error );
+
+			}
+
+		} ) );
 
 		for ( const kind of kinds ) {
 
 			for ( let i = 0; i < MOLECULES_PER_KIND; i ++ ) {
 
-				const group = kind.id === 'co2' ? createCO2() : createO2();
+				const template = models.get( kind.id );
+				const group = template
+					? createBlenderMolecule( kind.id, template )
+					: ( kind.id === 'co2' ? createCO2() : createO2() );
 				const home = this._slot( kind.depuis, i );
 				group.position.copy( home );
 				group.userData.moleculeId = kind.id;
@@ -472,6 +522,8 @@ export class LungsLevel extends BaseLevel {
 
 	onUpdate( delta, elapsed ) {
 
+        this.capillaryCells?.update(delta);
+
 		// L'alvéole « respire » doucement.
 		const breath = 1 + 0.04 * Math.sin( elapsed * 1.6 );
 		this.elements.get( 'alveolus' ).scale.setScalar( breath );
@@ -528,6 +580,12 @@ export class LungsLevel extends BaseLevel {
 
 	onDispose() {
 
+        if (this.capillaryCells) {
+            this.group.remove(this.capillaryCells.mesh, this.capillaryCells.plateletMesh);
+            this.capillaryCells.dispose();
+            this.capillaryCells = null;
+        }
+
 		this.elements.clear();
 		this.molecules = [];
 		this.held = null;
@@ -537,33 +595,107 @@ export class LungsLevel extends BaseLevel {
 
 }
 
-// ---------- Modèles des molécules (générés par code) ----------
+// ---------- Modèles 3D pédagogiques des molécules ----------
+// Les couleurs suivent la convention CPK : oxygène rouge, carbone gris foncé.
+// O₂ : deux oxygènes avec une double liaison ; CO₂ : O=C=O, angle de 180°.
+// Les proportions sont agrandies pour être facilement manipulables en VR.
 
-function atom( color, x ) {
-
-	// Une géométrie par atome : BaseLevel.dispose() libère toutes les géométries du niveau.
-	const mesh = new THREE.Mesh( new THREE.SphereGeometry( 0.09, 20, 14 ), new THREE.MeshStandardMaterial( { color, roughness: 0.3, emissive: 0x000000 } ) );
-	mesh.position.x = x;
-	return mesh;
-
+function atom(color, x, element, radius = 0.08) {
+    const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 24, 18),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.36, metalness: 0.02 })
+    );
+    mesh.name = `atome-${element}`;
+    mesh.userData.element = element;
+    mesh.position.x = x;
+    return mesh;
 }
 
-/** O₂ : deux atomes d'oxygène (rouges). */
+function doubleBond(group, fromX, toX) {
+    // Deux bâtonnets parallèles pour la double liaison covalente.
+    const length = Math.abs(toX - fromX);
+    for (const offset of [-0.022, 0.022]) {
+        const bond = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.009, 0.009, length, 10),
+            new THREE.MeshStandardMaterial({ color: 0xc6ced8, roughness: 0.4 })
+        );
+        bond.name = 'double-liaison';
+        bond.rotation.z = Math.PI / 2;
+        bond.position.set((fromX + toX) / 2, offset, 0);
+        group.add(bond);
+    }
+}
+
+/** Deux atomes d'oxygène (O=O) ; géométrie simplifiée, pas une simulation quantique. */
 function createO2() {
-
-	const group = new THREE.Group();
-	group.name = 'O2';
-	group.add( atom( 0xe53935, - 0.075 ), atom( 0xe53935, 0.075 ) );
-	return group;
-
+    const group = new THREE.Group();
+    group.name = 'O2';
+    group.userData.formula = 'O₂';
+    group.userData.composition = { O: 2, C: 0 };
+    doubleBond(group, -0.1, 0.1);
+    group.add(atom(0xe53935, -0.1, 'O'), atom(0xe53935, 0.1, 'O'));
+    return group;
 }
 
-/** CO₂ : un atome de carbone (gris foncé) entre deux atomes d'oxygène (rouges). */
+/** Molécule linéaire : O=C=O, angle O-C-O de 180°. */
 function createCO2() {
+    const group = new THREE.Group();
+    group.name = 'CO2';
+    group.userData.formula = 'CO₂';
+    group.userData.composition = { O: 2, C: 1 };
+    doubleBond(group, -0.18, 0);
+    doubleBond(group, 0, 0.18);
+    group.add(atom(0x424242, 0, 'C', 0.07));
+    group.add(atom(0xe53935, -0.18, 'O'), atom(0xe53935, 0.18, 'O'));
+    return group;
+}
 
-	const group = new THREE.Group();
-	group.name = 'CO2';
-	group.add( atom( 0x424242, 0 ), atom( 0xe53935, - 0.15 ), atom( 0xe53935, 0.15 ) );
-	return group;
+
+/**
+ * Import Blender -> Three.js : modèle visible au format GLB, conservé dans le groupe
+ * manipulable existant. Une petite sphère transparente facilite la saisie au centre,
+ * même lorsque le rayon VR passe entre deux atomes (O=O, O=C=O).
+ * Les géométries/matériaux sont indépendants pour préserver les flashs par molécule.
+ */
+function createBlenderMolecule( kind, template ) {
+
+    const co2 = kind === 'co2';
+    const group = new THREE.Group();
+    group.name = co2 ? 'CO2' : 'O2';
+    group.userData.formula = co2 ? 'CO₂' : 'O₂';
+    group.userData.composition = co2 ? { O: 2, C: 1 } : { O: 2, C: 0 };
+    group.userData.modelSource = 'blender-glb';
+
+    const visual = template.clone( true );
+    visual.name = 'modele-blender-glb';
+    const bounds = new THREE.Box3().setFromObject( visual );
+    const dimensions = bounds.getSize( new THREE.Vector3() );
+    const center = bounds.getCenter( new THREE.Vector3() );
+    // Taille comparable aux anciennes molécules générées en JS : 36 cm / 52 cm
+    // dans la scène pédagogique, pour conserver les emplacements et le gameplay.
+    const scale = ( co2 ? 0.52 : 0.36 ) / Math.max( dimensions.x, 0.001 );
+    visual.scale.setScalar( scale );
+    visual.position.copy( center ).multiplyScalar( -scale );
+
+    visual.traverse( ( object ) => {
+
+        if ( ! object.isMesh ) return;
+        object.geometry = object.geometry.clone();
+        object.material = Array.isArray( object.material )
+            ? object.material.map( ( material ) => material.clone() )
+            : object.material.clone();
+        if ( /^Oxygen(?:_|\.|$)/i.test( object.name ) ) object.userData.element = 'O';
+        if ( /^Carbon(?:_|\.|$)/i.test( object.name ) ) object.userData.element = 'C';
+
+    } );
+
+    group.add( visual );
+    const pickZone = new THREE.Mesh(
+        new THREE.SphereGeometry( 0.11, 12, 8 ),
+        new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0, depthWrite: false } )
+    );
+    pickZone.name = 'zone-de-saisie-invisible';
+    group.add( pickZone );
+    return group;
 
 }
