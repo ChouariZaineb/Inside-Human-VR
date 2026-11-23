@@ -58,7 +58,14 @@ function cacheLoadedFiles( registration ) {
 
 	const urls = performance.getEntriesByType( 'resource' )
 		.map( ( entry ) => entry.name )
-		.filter( ( url ) => url.startsWith( location.origin ) && ! url.includes( '/@vite' ) && ! url.includes( 'token=' ) );
+		.filter( ( raw ) => {
+
+			const url = new URL( raw );
+			const ownApp = url.origin === location.origin && ! url.pathname.startsWith( '/@vite' );
+			const threeCdn = url.origin === 'https://cdn.jsdelivr.net' && url.pathname.startsWith( '/npm/three@0.187.0/' );
+			return ( ownApp || threeCdn ) && ! url.search.includes( 'token=' );
+
+		} );
 
 	urls.push( location.href.split( '#' )[ 0 ] );
 	worker.postMessage( { type: 'CACHE_URLS', urls } );
