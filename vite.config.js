@@ -28,16 +28,56 @@ function localHttps() {
 
 }
 
+
+/**
+ * Charge Three.js r187 depuis jsDelivr au lieu du paquet local.
+ * Nous ne modifions pas les imports applicatifs : Vite les transforme en URL
+ * pendant le dev ET le build, puis le navigateur charge les modules via HTTPS.
+ * Les dépendances transitives ('three') utilisent l'import map HTML.
+ */
+const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.187.0';
+
+function threeCdnPlugin() {
+
+	return {
+		name: 'inside-human-three-cdn',
+		enforce: 'pre',
+		transform( code, id ) {
+
+			const file = id.split( '?' )[ 0 ].replaceAll( '\\', '/' );
+			if ( ! /\/(src|sandbox)\/.*\.js$/.test( file ) ) return null;
+
+			const changed = code.replace(
+				/(\bfrom\s*|\bimport\s*\(\s*)(['"])(three(?:\/webgpu|\/tsl|\/addons\/[^'"\s)]+)?)\2/g,
+				( match, prefix, quote, id ) => {
+
+					let path;
+					if ( id === 'three' || id === 'three/webgpu' ) path = '/build/three.webgpu.js';
+					else if ( id === 'three/tsl' ) path = '/build/three.tsl.js';
+					else if ( id.startsWith( 'three/addons/' ) ) path = '/examples/jsm/' + id.slice( 'three/addons/'.length );
+					else return match;
+					return prefix + quote + THREE_CDN + path + quote;
+
+				}
+			);
+
+			return changed === code ? null : { code: changed, map: null };
+
+		}
+	};
+
+}
+
 export default defineConfig( {
 	// Chemins relatifs : le build fonctionne aussi sous un sous-dossier (GitHub Pages).
 	base: './',
 	server: { https: localHttps(), host: true },
-	resolve: {
-		// Les addons de Three.js importent 'three' : on les redirige vers 'three/webgpu'
-		// pour n'avoir qu'une seule instance de Three.js (celle du WebGPURenderer).
-		alias: [ { find: /^three$/, replacement: 'three/webgpu' } ]
+	optimizeDeps: {
+		noDiscovery: true
 	},
+	plugins: [ threeCdnPlugin() ],
 	build: {
+		rollupOptions: { external: ( id ) => id.startsWith( THREE_CDN + '/' ) },
 		// WebGPU n'existe que sur des navigateurs récents : on cible ES2022+ (top-level await).
 		target: 'esnext',
 		// Three.js WebGPU est volumineux : on relève le seuil d'avertissement.

@@ -10,7 +10,9 @@
  * Au premier chargement, la page s'affiche AVANT que le Service Worker soit actif : pwa.js lui envoie
  * alors la liste des fichiers déjà chargés (message CACHE_URLS) pour qu'il les range aussi.
  */
-const CACHE = 'inside-human-vr-v3';
+const CACHE = 'inside-human-vr-cdn-r187-v1';
+const THREE_CDN_ORIGIN = 'https://cdn.jsdelivr.net';
+const THREE_CDN_PREFIX = '/npm/three@0.187.0/';
 
 /** Coquille de l'application, rangée dès l'installation. */
 const APP_SHELL = [
@@ -31,7 +33,10 @@ const APP_SHELL = [
 	'./assets/models/vessels.glb',
 	'./draco/draco_wasm_wrapper.js',
 	'./draco/draco_decoder.wasm',
-	'./draco/draco_decoder.js'
+	'./draco/draco_decoder.js',
+	// Entrées WebGPU/TSL du CDN (les imports transitifs sont mis en cache au chargement).
+	'https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js',
+	'https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js'
 ];
 
 // Installation : on range la coquille de l'application.
@@ -62,8 +67,10 @@ self.addEventListener( 'fetch', ( event ) => {
 	const request = event.request;
 	const url = new URL( request.url );
 
-	// Seulement les GET de notre propre site (pas le serveur de développement en direct, pas les autres sites).
-	if ( request.method !== 'GET' || url.origin !== self.location.origin ) return;
+	// GET sur notre site ou sur les modules Three.js r187 de notre CDN uniquement.
+	const sameOrigin = url.origin === self.location.origin;
+	const isThreeCdn = url.origin === THREE_CDN_ORIGIN && url.pathname.startsWith( THREE_CDN_PREFIX );
+	if ( request.method !== 'GET' || ( ! sameOrigin && ! isThreeCdn ) ) return;
 	if ( url.pathname.startsWith( '/@vite' ) || url.search.includes( 'token=' ) ) return;
 
 	event.respondWith(

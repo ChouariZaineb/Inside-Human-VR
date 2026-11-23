@@ -28,5 +28,16 @@
   <button data-f="lungs">Poumons</button><button data-f="brain">Cerveau</button><button data-f="heart">Cœur</button><button data-f="">Tout</button>
 </div>
 <div id="hud"></div>
+<!-- Three.js r187 est chargé par CDN ; cet import map permet aux addons distants d'importer "three". -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+  }
+}
+</script>
 <script type="module" src="./body.js"></script>
 </body></html>
