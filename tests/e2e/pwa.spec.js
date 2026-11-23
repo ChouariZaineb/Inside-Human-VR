@@ -56,7 +56,12 @@ test.describe( 'PWA (version de production)', () => {
 		await expect.poll( () => page.evaluate( async () => {
 
 			const urls = [ location.href, ...performance.getEntriesByType( 'resource' ).map( ( entry ) => entry.name ) ]
-				.filter( ( url ) => new URL( url ).origin === location.origin );
+				.filter( ( raw ) => {
+
+					const url = new URL( raw );
+					return url.origin === location.origin || ( url.origin === 'https://cdn.jsdelivr.net' && url.pathname.startsWith( '/npm/three@0.187.0/' ) );
+
+				} );
 			let missing = 0;
 			for ( const url of urls ) if ( ! await caches.match( url, { ignoreVary: true, ignoreSearch: true } ) ) missing ++;
 			return missing;

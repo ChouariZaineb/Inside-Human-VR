@@ -29,5 +29,16 @@
   <button data-o="lungs">Poumons</button><button data-o="brain">Cerveau</button><button id="fire">Impulsion nerveuse</button><button id="ok">Réussite</button><button id="ko">Erreur</button><button id="voice">Lire à voix haute</button><button id="snd">Activer le son</button><button id="mute">Muet (M)</button>
 </div>
 <div id="hud"></div>
+<!-- Three.js r187 est chargé par CDN ; cet import map permet aux addons distants d'importer "three". -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+  }
+}
+</script>
 <script type="module" src="./organs.js"></script>
 </body></html>
