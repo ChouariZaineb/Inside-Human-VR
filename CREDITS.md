@@ -17,6 +17,7 @@ Aucun modèle 3D externe n'est utilisé à ce jour.
 | Poumons (`lungs.glb`) | « Realistic Human Lungs » par neshallads, https://sketchfab.com/3d-models/realistic-human-lungs-ce09f4099a68467880f46e61eb9a3531, simplifié | CC BY 4.0 |
 | Cerveau (`brain.glb`) | « Brain » par maheshshinde777, https://sketchfab.com/3d-models/brain-735ca31a3b22433281e6fa9606792faa, simplifié | CC BY 4.0 |
 | Cœur (`heart.glb`) | « Human Heart 3d Model » par Sourav Pan, https://3d.nih.gov/entries/3DPX-022787 (NIH 3D) | CC0 1.0 |
+| Neurone multipolaire (`neuron.glb`) | « Multipolar neuron » par Alain Sorazu, https://sketchfab.com/3d-models/multipolar-neuron-6834b20a2bc6473d85737587a20ff84f, modifié (simplifié, compressé) | CC BY-SA 4.0 |
 | Vaisseaux sanguins (`vessels.glb`) | « Angiology » par Z-Anatomy, https://sketchfab.com/3d-models/angiology-0caae8f894cc40b69f3f78adf14b9665, modifié (artères et veines seulement, simplifié) | CC BY-SA 4.0 |
 | Globules rouges | Géométrie de révolution générée par code (`src/systems/Particles.js`) | Création du projet |
 
@@ -24,8 +25,9 @@ Choix technique : les organes (squelette, poumons, cerveau, cœur, vaisseaux) so
 `public/assets/models/`, simplifiés et compressés (Draco) pour rester légers. Le battement, la respiration et la couleur
 du sang sont animés par code et par shaders. Les éléments « Générés par code » ci-dessus sont des formes de secours ou des schémas.
 
-**Licence des vaisseaux (CC BY-SA 4.0)** : le fichier `vessels.glb` est une version modifiée de « Angiology » ; il reste donc
-sous CC BY-SA 4.0 (partage dans les mêmes conditions) et le crédit à Z-Anatomy doit être conservé partout où le projet est partagé.
+**Licence CC BY-SA 4.0** : `vessels.glb` (modifié de « Angiology ») et `neuron.glb` (modifié de « Multipolar neuron ») restent
+sous CC BY-SA 4.0 (partage dans les mêmes conditions). Ces deux fichiers ne sont pas couverts par la licence du code du projet,
+et les crédits à Z-Anatomy et Alain Sorazu doivent être conservés partout où le projet est partagé.
 
 ## Sons
 Aucun fichier audio : les sons sont synthétisés par code (Web Audio API, `src/core/AudioManager.js`).

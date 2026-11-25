@@ -29,7 +29,8 @@ export const RAY_LENGTH = 5;
 /** Options de la session WebXR : 'local-floor' obligatoire (origine au sol). */
 const SESSION_INIT = {
 	requiredFeatures: [ 'local-floor' ],
-	optionalFeatures: [ 'bounded-floor' ]
+	// 'hand-tracking' : le pincement des doigts déclenche le même événement « select » que la gâchette.
+	optionalFeatures: [ 'bounded-floor', 'hand-tracking' ]
 };
 
 export class XRManager extends THREE.EventDispatcher {
