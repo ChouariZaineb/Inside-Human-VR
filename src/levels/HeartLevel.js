@@ -7,13 +7,33 @@
  * Déroulé (GameState) : ARRIVAL → EXPLORATION → MISSION → RESULT → DONE.
  * Tout le texte vient de levels.json ; ici il n'y a que la logique.
  *
- * Modèle 3D : tant que le vrai modèle (Yessmine) n'est pas là, le niveau affiche
- * des formes simples. Pour brancher le vrai modèle, appeler pour chaque pièce :
- *   level.registerElement('right_atrium', objet3D);
+ * Modèle 3D : le vrai cœur anatomique (heart.glb, NIH 3D, CC0) est affiché en grand devant
+ * l'utilisateur, et il bat. Chaque élément de la mission (veine cave, oreillettes, ventricules,
+ * artère pulmonaire) est une « zone » lumineuse posée sur la bonne partie du modèle : c'est elle
+ * qu'on pointe et qu'on sélectionne. Si le modèle ne peut pas être chargé, le niveau garde
+ * les formes simples d'origine (le niveau reste jouable).
  */
 import * as THREE from 'three/webgpu';
 import { BaseLevel } from './BaseLevel.js';
 import { PHASE } from '../data/GameState.js';
+import { createRealBody } from '../systems/RealBody.js';
+
+/** Vrai cœur : centre et hauteur dans le niveau (m). Le modèle normalisé mesure 0,15 m. */
+const HEART_CENTER = [0.75, 1.6, -3.0];
+const HEART_HEIGHT = 1.6;
+
+/**
+ * Zones sélectionnables posées sur le vrai modèle : décalage depuis le centre du cœur (m)
+ * et rayon. Le cœur est vu de face : la partie droite du cœur est à gauche de l'utilisateur.
+ */
+const HOTSPOTS = {
+  vena_cava: { offset: [-0.28, 0.46, 0.15], radius: 0.08, color: 0x3f6fd1 },
+  right_atrium: { offset: [-0.21, -0.06, 0.38], radius: 0.11, color: 0x3f6fd1 },
+  right_ventricle: { offset: [0.08, -0.24, 0.39], radius: 0.12, color: 0x3f6fd1 },
+  pulmonary_artery: { offset: [0.06, 0.22, 0.23], radius: 0.08, color: 0x3f6fd1 },
+  left_atrium: { offset: [0.32, 0.19, -0.13], radius: 0.09, color: 0xd14040 },
+  left_ventricle: { offset: [0.34, -0.36, 0.36], radius: 0.12, color: 0xd14040 },
+};
 
 /** Position et couleur des formes provisoires (centre du cœur : x=0.8, y=1.5, z=-3.2). */
 const PLACEHOLDERS = {
@@ -39,11 +59,71 @@ export class HeartLevel extends BaseLevel {
     this.mainPanel = null;
     this.button = null;
     this._buttonAction = null;
+    this.heartModel = null; // vrai cœur 3D (heart.glb), s'il a pu être chargé
+    this.hotspots = false;  // true : les éléments sont des zones posées sur le vrai cœur
   }
 
   // ---------- Construction ----------
 
   async onLoad() {
+    const realHeart = await this._loadRealHeart();
+    if (realHeart) this._addHotspots();
+    else this._addPlaceholders();
+    this.mainPanel = this.addPanel({ width: 1.6, height: 1.0 }, PANEL_POS);
+    this.button = this.addPanel({ width: 1.0, height: 0.3, variant: 'button' }, BUTTON_POS);
+    this.addInteractable(this.button.mesh);
+  }
+
+  /**
+   * Charge le vrai cœur (heart.glb de Yessmine) et le place en grand devant l'utilisateur.
+   * @returns {Promise<boolean>} true si le modèle est affiché.
+   * @private
+   */
+  async _loadRealHeart() {
+    try {
+      const body = await createRealBody({ parts: ['heart'] });
+      const part = body.parts.heart;
+      if (!part) return false;
+      part.root.position.set(0, 0, 0);
+      this.heartModel = new THREE.Group();
+      this.heartModel.name = 'coeur-reel';
+      this.heartModel.add(part.root);
+      this.heartModel.scale.setScalar(HEART_HEIGHT / part.cfg.size);
+      this.heartModel.position.set(...HEART_CENTER);
+      this.heartModel.rotation.y = Math.PI / 2; // vue de face (antérieure) : ventricule droit vers l'utilisateur
+      this.group.add(this.heartModel);
+      return true;
+    } catch (error) {
+      console.warn('[HeartLevel] Cœur 3D indisponible, formes simples utilisées :', error.message ?? error);
+      return false;
+    }
+  }
+
+  /**
+   * Zones sélectionnables sur les parties du vrai cœur. Elles sont invisibles :
+   * on ne voit que le cœur. Une zone s'allume seulement quand on la pointe,
+   * et elle clignote en vert ou en rouge quand on la sélectionne.
+   * @private
+   */
+  _addHotspots() {
+    this.hotspots = true;
+    for (const [id, h] of Object.entries(HOTSPOTS)) {
+      const material = new THREE.MeshStandardMaterial({
+        color: h.color, emissive: h.color, emissiveIntensity: 0.6,
+        transparent: true, opacity: 0, depthWrite: false, roughness: 0.4,
+      });
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(h.radius, 24, 16), material);
+      mesh.name = `zone-${id}`;
+      mesh.position.set(HEART_CENTER[0] + h.offset[0], HEART_CENTER[1] + h.offset[1], HEART_CENTER[2] + h.offset[2]);
+      mesh.renderOrder = 2; // dessinées après le cœur : visibles par-dessus
+      mesh.userData.customHover = true; // le survol est affiché par le niveau (opacité), pas par Interaction
+      this.group.add(mesh);
+      this.registerElement(id, mesh);
+    }
+  }
+
+  /** Formes simples d'origine (si le modèle 3D manque). @private */
+  _addPlaceholders() {
     for (const [id, p] of Object.entries(PLACEHOLDERS)) {
       const geometry = p.shape === 'sphere' ? new THREE.SphereGeometry(0.3, 24, 16) : new THREE.CylinderGeometry(0.14, 0.14, 0.6, 20);
       const material = new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.5, emissive: 0x000000 });
@@ -52,9 +132,6 @@ export class HeartLevel extends BaseLevel {
       this.group.add(mesh);
       this.registerElement(id, mesh);
     }
-    this.mainPanel = this.addPanel({ width: 1.6, height: 1.0 }, PANEL_POS);
-    this.button = this.addPanel({ width: 1.0, height: 0.3, variant: 'button' }, BUTTON_POS);
-    this.addInteractable(this.button.mesh);
   }
 
   /**
@@ -205,10 +282,19 @@ export class HeartLevel extends BaseLevel {
   onUpdate(delta, elapsed) {
     // Battement simple (≈ 70 battements par minute) et fondu du halo de retour visuel
     const beat = 1 + 0.05 * Math.pow(Math.max(0, Math.sin(elapsed * Math.PI * 2 * 1.2)), 3);
+    if (this.heartModel) this.heartModel.children[0].scale.setScalar(beat); // le vrai cœur bat
     for (const [id, mesh] of this.elements) {
       if (mesh.geometry?.type === 'SphereGeometry') mesh.scale.setScalar(beat);
       const f = this._flash.get(id) ?? 0;
-      if (f > 0 && mesh.material?.emissiveIntensity !== undefined) {
+      if (mesh.material?.emissiveIntensity === undefined) continue;
+      if (this.hotspots) {
+        // Zone invisible, allumée quand on la pointe, clignote (vert / rouge / bleu) quand on la sélectionne.
+        const next = Math.max(0, f - delta * 1.2);
+        this._flash.set(id, next);
+        const target = Math.max(next * 0.7, mesh.userData.hovered ? 0.45 : 0);
+        mesh.material.opacity += (target - mesh.material.opacity) * Math.min(1, delta * 12);
+        if (f > 0 && next === 0) mesh.material.emissive.setHex(HOTSPOTS[id].color); // retour à la couleur de la zone
+      } else if (f > 0) {
         const next = Math.max(0, f - delta * 1.2);
         this._flash.set(id, next);
         mesh.material.emissiveIntensity = next;
@@ -217,6 +303,8 @@ export class HeartLevel extends BaseLevel {
   }
 
   onDispose() {
+    this.heartModel = null;
+    this.hotspots = false;
     this.elements.clear();
     this._flash.clear();
   }

@@ -226,7 +226,10 @@ export class LevelManager {
 
 			this.interaction.addSelectable( object, {
 				// Les panneaux n'ont pas de couleur émissive : la surbrillance ne s'applique qu'aux objets 3D.
-				highlight: ! object.userData.panel,
+				// Un niveau peut gérer lui-même l'affichage du survol avec object.userData.customHover = true.
+				highlight: ! object.userData.panel && ! object.userData.customHover,
+				// Le niveau lit object.userData.hovered pour savoir si l'objet est pointé.
+				onHover: ( { object: hoveredObject, hovered } ) => { hoveredObject.userData.hovered = hovered; },
 				onSelect: ( { object: selected } ) => this.eventBus.emit( EVENTS.OBJECT_SELECTED, { object: selected } ),
 				grabbable: Boolean( grab ),
 				onGrab: grab && grab.onGrab,
