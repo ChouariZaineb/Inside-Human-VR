@@ -6,12 +6,12 @@ Branche : `feature/visuels-coeur`. Aucun modèle 3D externe : tout est généré
 
 | Fichier | Rôle | À importer |
 |---|---|---|
-| `src/shaders/tissuePulse.js` | Battement « lub-dub » du cœur (TSL) | `heartbeatMaterial()`, `heartRate`, `beatNode`, `beatJS(t)` |
-| `src/shaders/bloodFlow.js` | Flux du sang sur la paroi des vaisseaux, rouge/bleu | `vesselMaterial()`, `oxygen`, `makeProfile(stops)` |
-| `src/systems/Particles.js` | Globules rouges (`InstancedMesh`) le long d'une courbe | `BloodParticles` |
-| `src/systems/ProceduralHeart.js` | Cœur anatomique généré par code | `createAnatomicalHeart({ palette })` |
-| `src/systems/XrayBody.js` | Corps « radio » : silhouette, côtes, poumons, vaisseaux, flèches | `createXrayBody()`, `bodyGeometry()` |
-| `src/systems/HeartAtlas.js` | Torse + cœur + gros vaisseaux, et schéma de la circulation | `createHeartAtlas()` |
+| `src/shaders/tissuePulse.mjs` | Battement « lub-dub » du cœur (TSL) | `heartbeatMaterial()`, `heartRate`, `beatNode`, `beatJS(t)` |
+| `src/shaders/bloodFlow.mjs` | Flux du sang sur la paroi des vaisseaux, rouge/bleu | `vesselMaterial()`, `oxygen`, `makeProfile(stops)` |
+| `src/systems/Particles.mjs` | Globules rouges (`InstancedMesh`) le long d'une courbe | `BloodParticles` |
+| `src/systems/ProceduralHeart.mjs` | Cœur anatomique généré par code | `createAnatomicalHeart({ palette })` |
+| `src/systems/XrayBody.mjs` | Corps « radio » : silhouette, côtes, poumons, vaisseaux, flèches | `createXrayBody()`, `bodyGeometry()` |
+| `src/systems/HeartAtlas.mjs` | Torse + cœur + gros vaisseaux, et schéma de la circulation | `createHeartAtlas()` |
 
 ```js
 // Exemple pour un niveau : sang qui circule dans un vaisseau

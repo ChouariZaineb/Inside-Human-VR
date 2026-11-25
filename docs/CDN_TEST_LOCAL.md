@@ -4,11 +4,11 @@ Cette version de test est issue du commit `a1d0ba2`. Elle ne modifie pas la règ
 
 ## Fonctionnement
 
-- `vite.config.js`: plugin `inside-human-three-cdn` remplaçant les imports Three.js de `src/` et `sandbox/` par des URLs jsDelivr **pendant le dev et le build**.
+- `vite.config.mjs`: plugin `inside-human-three-cdn` remplaçant les imports Three.js de `src/` et `sandbox/` par des URLs jsDelivr **pendant le dev et le build**.
 - `index.html` et `sandbox/*.html`: import map pour les dépendances internes des addons Three.js distants.
-- `src/pwa.js`, `public/sw.js`: cache limité au domaine jsDelivr et au package `three@0.187.0`.
-- `tests/e2e/cdn.spec.js`: vérification des requêtes réseau réellement émises.
-- `tests/e2e/pwa.spec.js`: vérification du cache des scripts CDN avant l'essai hors ligne.
+- `src/pwa.mjs`, `public/sw.mjs`: cache limité au domaine jsDelivr et au package `three@0.187.0`.
+- `tests/e2e/cdn.spec.mjs`: vérification des requêtes réseau réellement émises.
+- `tests/e2e/pwa.spec.mjs`: vérification du cache des scripts CDN avant l'essai hors ligne.
 - Three.js reste **temporairement dans `package.json`** comme filet de sécurité, à retirer après validation dans un vrai navigateur et en CI.
 
 ## Ordre de test sur une branche dédiée (aucun push)

@@ -10,7 +10,7 @@
 
 ## État de l'application
 
-La **mission principale des poumons** utilise `BloodParticles` (`src/systems/Particles.js`) pour animer des globules biconcaves et des plaquettes dans le capillaire, sans changer la logique des transferts. Les modèles O₂/CO₂ sont générés dans `src/levels/LungsLevel.js` pour rester sélectionnables en VR. Les niveaux et le score restent identiques.
+La **mission principale des poumons** utilise `BloodParticles` (`src/systems/Particles.mjs`) pour animer des globules biconcaves et des plaquettes dans le capillaire, sans changer la logique des transferts. Les modèles O₂/CO₂ sont générés dans `src/levels/LungsLevel.mjs` pour rester sélectionnables en VR. Les niveaux et le score restent identiques.
 
 ## Générer des modèles éditables dans Blender
 

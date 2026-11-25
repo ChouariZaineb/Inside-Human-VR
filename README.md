@@ -24,7 +24,7 @@ npm run build      # build de production dans dist/
 npm run preview    # teste le build de production en local
 ```
 
-Au démarrage, l'application affiche la **scène du corps humain** (`src/scenes/BodyScene.js`) :
+Au démarrage, l'application affiche la **scène du corps humain** (`src/scenes/BodyScene.mjs`) :
 le corps « radio » avec le cœur qui bat et le sang qui circule, sur lequel on peut se téléporter.
 Ajouter `?test` à l'adresse (`http://localhost:5173/?test`) charge la scène de test du moteur.
 
@@ -87,11 +87,11 @@ et à chaque pull request, et chaque fusion dans `main` met l'application en lig
   WebGPU (`XRGPUBinding`) est encore expérimentale dans Chrome et absente d'Immersive Web Emulator.
   L'image WebGPU est donc seulement **copiée** dans la couche (`texImage2D` + `blitFramebuffer`) : WebGL ne dessine rien.
 - **Interactions** : sélection (gâchette / clic gauche) et **saisie** d'objets (bouton grip / clic droit maintenu).
-- **PWA** : `manifest.webmanifest`, Service Worker `sw.js` (fonctionne hors ligne), icônes, enregistrement dans `src/pwa.js`
+- **PWA** : `manifest.webmanifest`, Service Worker `sw.mjs` (fonctionne hors ligne), icônes, enregistrement dans `src/pwa.mjs`
   (voir `docs/MOTEUR_VR.md`, section 14, et `docs/ARCHITECTURE.md`, section 8).
 
 Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les addons de Three.js importent `'three'` :
-`vite.config.js` redirige `'three'` vers `'three/webgpu'`.
+`vite.config.mjs` redirige `'three'` vers `'three/webgpu'`.
 
 ---
 
@@ -102,8 +102,8 @@ Inside-Human-VR/
 ├── index.html                Page d'accueil (provisoire)                 → Zaineb, puis Melek
 ├── styles.css                Styles de la page                           → Zaineb, puis Melek
 ├── .github/workflows/        CI (ci.yml) et déploiement GitHub Pages (deploy.yml) → Zaineb
-├── playwright.config.js      Configuration des tests de bout en bout     → Zaineb
-├── vite.config.js            Configuration Vite (alias three/webgpu, HTTPS local) → Zaineb, Yessmine
+├── playwright.config.mjs      Configuration des tests de bout en bout     → Zaineb
+├── vite.config.mjs            Configuration Vite (alias three/webgpu, HTTPS local) → Zaineb, Yessmine
 ├── README.md                 Présentation, API du moteur, journal des tâches
 ├── CREDITS.md, ATTRIBUTION.md Licences des ressources                    → Yessmine
 ├── docs/                     Documentation du projet
@@ -117,35 +117,35 @@ Inside-Human-VR/
 │   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
 ├── sandbox/                  Pages d'essai des visuels (xray, atlas)     → Yessmine
 ├── src/
-│   ├── main.js               Assemble le moteur, les systèmes et la scène → Zaineb
-│   ├── pwa.js                Enregistrement du Service Worker (PWA)      → Zaineb
+│   ├── main.mjs               Assemble le moteur, les systèmes et la scène → Zaineb
+│   ├── pwa.mjs                Enregistrement du Service Worker (PWA)      → Zaineb
 │   ├── core/                 Moteur                                      → Zaineb
-│   │   ├── Engine.js           API centrale (scene, camera, player, onUpdate, isVR)
-│   │   ├── Renderer.js         WebGPURenderer, scène, caméra, lumières, rendu stéréo
-│   │   ├── XRManager.js        Session immersive-vr (API WebXR Device), manettes, rayons
-│   │   ├── XRPresenter.js      Rendu WebGPU des deux yeux et copie vers le casque
-│   │   ├── DesktopControls.js  Mode bureau (PointerLockControls, réticule)
-│   │   └── LevelManager.js     Chargement des niveaux et passage de l'un à l'autre
+│   │   ├── Engine.mjs           API centrale (scene, camera, player, onUpdate, isVR)
+│   │   ├── Renderer.mjs         WebGPURenderer, scène, caméra, lumières, rendu stéréo
+│   │   ├── XRManager.mjs        Session immersive-vr (API WebXR Device), manettes, rayons
+│   │   ├── XRPresenter.mjs      Rendu WebGPU des deux yeux et copie vers le casque
+│   │   ├── DesktopControls.mjs  Mode bureau (PointerLockControls, réticule)
+│   │   └── LevelManager.mjs     Chargement des niveaux et passage de l'un à l'autre
 │   ├── scenes/
-│   │   └── BodyScene.js        Scène de départ : le corps humain en VR   → Zaineb
+│   │   └── BodyScene.mjs        Scène de départ : le corps humain en VR   → Zaineb
 │   ├── debug/
-│   │   └── TestScene.js        Scène de test du moteur (?test)           → Zaineb
+│   │   └── TestScene.mjs        Scène de test du moteur (?test)           → Zaineb
 │   ├── systems/
-│   │   ├── Interaction.js      Pointage et sélection (manette ou souris) → Zaineb
-│   │   ├── Manipulation.js     Joysticks : snap turn, rotation et distance de l'objet tenu → Zaineb
-│   │   ├── Teleport.js         Points de téléportation, fondu au noir    → Zaineb
-│   │   ├── XrayBody.js         Corps humain « radio » (modèle 3D)        → Yessmine
-│   │   ├── ProceduralHeart.js  Cœur anatomique généré par code           → Yessmine
-│   │   ├── HeartAtlas.js       Torse, cœur et schéma de la circulation   → Yessmine
-│   │   ├── Particles.js        Globules rouges (InstancedMesh)           → Yessmine
-│   │   ├── EventBus.js         Bus d'événements                          → Melek
-│   │   └── UIPanel.js          Panneaux 3D flottants                     → Melek
+│   │   ├── Interaction.mjs      Pointage et sélection (manette ou souris) → Zaineb
+│   │   ├── Manipulation.mjs     Joysticks : snap turn, rotation et distance de l'objet tenu → Zaineb
+│   │   ├── Teleport.mjs         Points de téléportation, fondu au noir    → Zaineb
+│   │   ├── XrayBody.mjs         Corps humain « radio » (modèle 3D)        → Yessmine
+│   │   ├── ProceduralHeart.mjs  Cœur anatomique généré par code           → Yessmine
+│   │   ├── HeartAtlas.mjs       Torse, cœur et schéma de la circulation   → Yessmine
+│   │   ├── Particles.mjs        Globules rouges (InstancedMesh)           → Yessmine
+│   │   ├── EventBus.mjs         Bus d'événements                          → Melek
+│   │   └── UIPanel.mjs          Panneaux 3D flottants                     → Melek
 │   ├── shaders/              Shaders TSL (bloodFlow, tissuePulse)        → Yessmine
 │   ├── levels/               BaseLevel, HeartLevel → Melek ; LungsLevel → Zaineb
 │   └── data/                 GameState (machine à états, score)          → Melek
 └── public/
     ├── manifest.webmanifest  Manifeste de la PWA (nom, icônes, affichage) → Zaineb
-    ├── sw.js                 Service Worker : cache et hors ligne        → Zaineb
+    ├── sw.mjs                 Service Worker : cache et hors ligne        → Zaineb
     ├── icons/                Icônes de l'application                     → Zaineb
     └── assets/
     ├── models/               Modèles GLB (si besoin)                     → Yessmine
@@ -157,7 +157,7 @@ Inside-Human-VR/
 
 ## 4. API du moteur
 
-`main.js` crée les objets suivants et les passe aux scènes / niveaux :
+`main.mjs` crée les objets suivants et les passe aux scènes / niveaux :
 
 | Objet | Rôle | API principale |
 |-------|------|----------------|
@@ -229,8 +229,8 @@ export function createExampleLevel( { engine, interaction, teleport } ) {
 }
 ```
 
-Pour l’essayer, remplacer dans `src/main.js` l’appel `createBodyScene( … )` par `createExampleLevel( … )`.
-`src/debug/TestScene.js` est un exemple complet qui suit le même modèle.
+Pour l’essayer, remplacer dans `src/main.mjs` l’appel `createBodyScene( … )` par `createExampleLevel( … )`.
+`src/debug/TestScene.mjs` est un exemple complet qui suit le même modèle.
 
 ---
 
@@ -264,45 +264,45 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | Date | Membre | Branche | Tâche | État |
 |------|--------|---------|-------|------|
 | 2026-11-04 | Chouari Zaineb | `main` | Initialisation du projet Vite, installation de Three.js r187, arborescence, branches `main` et `develop` | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Renderer.js` : WebGPURenderer, scène, caméra, lumières, repli WebGL officiel pour la XR | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Engine.js` : API centrale (`player`, `onUpdate`, `isVR`, boucle `setAnimationLoop`) | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `XRManager.js` : session `immersive-vr` en `local-floor`, deux manettes avec modèles et rayon | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `DesktopControls.js` : mode bureau (PointerLockControls, réticule, Échap) | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Interaction.js` : raycasting unifié manette/souris (patron Strategy), survol et sélection | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Teleport.js` : points de téléportation animés, fondu au noir, touches 1 à 9 | Fait |
-| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `TestScene.js`, page d'accueil, compteur d'images/s, README (API du moteur, règles Git) | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Renderer.mjs` : WebGPURenderer, scène, caméra, lumières, repli WebGL officiel pour la XR | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Engine.mjs` : API centrale (`player`, `onUpdate`, `isVR`, boucle `setAnimationLoop`) | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `XRManager.mjs` : session `immersive-vr` en `local-floor`, deux manettes avec modèles et rayon | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `DesktopControls.mjs` : mode bureau (PointerLockControls, réticule, Échap) | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Interaction.mjs` : raycasting unifié manette/souris (patron Strategy), survol et sélection | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `Teleport.mjs` : points de téléportation animés, fondu au noir, touches 1 à 9 | Fait |
+| 2026-11-04 | Chouari Zaineb | `feature/moteur-vr` | `TestScene.mjs`, page d'accueil, compteur d'images/s, README (API du moteur, règles Git) | Fait |
 | 2026-11-05 | Chouari Zaineb | `feature/moteur-vr` | Vérification VR non bloquante, message précis « VR non disponible », instructions Immersive Web Emulator 2.0 | Fait |
 | 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `levels.json` : textes, questions et missions des 3 niveaux en français | Fait |
-| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `EventBus.js` et `GameState.js` : bus d'événements, machine à états et score | Fait |
-| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `BaseLevel.js` et `UIPanel.js` : classe de base des niveaux, panneaux 3D flottants | Fait |
-| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `HeartLevel.js` : mission du globule rouge (niveau 1) | Fait |
+| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `EventBus.mjs` et `GameState.mjs` : bus d'événements, machine à états et score | Fait |
+| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `BaseLevel.mjs` et `UIPanel.mjs` : classe de base des niveaux, panneaux 3D flottants | Fait |
+| 2026-11-05 | Malouli Melek | `feature/jeu-coeur` | `HeartLevel.mjs` : mission du globule rouge (niveau 1) | Fait |
 | 2026-11-05 | Hentati Yessmine | `feature/visuels-coeur` | Recherche des modèles 3D ; choix de modèles procéduraux (légers, sans contrainte de licence) | Fait |
 
 ### Sprint 2 : intégration, scène du corps humain et niveaux suivants
 
 | Date | Membre | Branche | Tâche | État |
 |------|--------|---------|-------|------|
-| 2026-11-10 | Hentati Yessmine | `feature/visuels-coeur` | Shaders TSL `bloodFlow.js` (flux du sang) et `tissuePulse.js` (battement du cœur) | Fait |
-| 2026-11-10 | Hentati Yessmine | `feature/visuels-coeur` | `Particles.js` (globules rouges), `ProceduralHeart.js`, `XrayBody.js` (corps humain), `HeartAtlas.js` | Fait |
+| 2026-11-10 | Hentati Yessmine | `feature/visuels-coeur` | Shaders TSL `bloodFlow.mjs` (flux du sang) et `tissuePulse.mjs` (battement du cœur) | Fait |
+| 2026-11-10 | Hentati Yessmine | `feature/visuels-coeur` | `Particles.mjs` (globules rouges), `ProceduralHeart.mjs`, `XrayBody.mjs` (corps humain), `HeartAtlas.mjs` | Fait |
 | 2026-11-10 | Hentati Yessmine | `feature/visuels-coeur` | Pages d'essai `sandbox/`, `CREDITS.md`, `docs/VISUELS.md`, `docs/CAHIER_DES_CHARGES.md` | Fait |
 | 2026-11-11 | Malouli Melek | `develop`, `main` | Fusion de `feature/jeu-coeur` dans `develop` puis dans `main` (PR #1 et #4) | Fait |
-| 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Synchronisation des trois branches (moteur, jeu, visuels) et résolution des conflits (`README.md`, `vite.config.js`) | Fait |
+| 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Synchronisation des trois branches (moteur, jeu, visuels) et résolution des conflits (`README.md`, `vite.config.mjs`) | Fait |
 | 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Correction du moteur : `delta` borné entre 0 et 0,1 s (le premier delta pouvait être négatif) | Fait |
-| 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | `BodyScene.js` : corps humain en `immersive-vr`, 3 points de téléportation, cœur sélectionnable | Fait |
+| 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | `BodyScene.mjs` : corps humain en `immersive-vr`, 3 points de téléportation, cœur sélectionnable | Fait |
 | 2026-11-11 | Chouari Zaineb | `feature/integration-sprint2` | Dossier `docs/` : `ARCHITECTURE.md`, `MOTEUR_VR.md`, `GUIDE_GIT.md` ; journal des Sprints 1 et 2 | Fait |
 | 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | Tester `HeartLevel` dans l'application (lancé par `LevelManager` depuis le cœur de `BodyScene`) et ajuster textes et positions | En cours |
 | 2026-11-12 | Hentati Yessmine | `feature/visuels-niveau-coeur` | Remplacer les formes provisoires de `HeartLevel` par le cœur procédural (`registerElement`) | En cours |
-| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LevelManager.js` : un niveau en mémoire à la fois, transitions, lien `Interaction` → `EventBus` pour les niveaux de `BaseLevel` | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LungsLevel.js` : alvéole, bronche, capillaire, mission des échanges gazeux (O₂ et CO₂), sang qui passe du bleu au rouge | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `main.js` : parcours scène de départ → cœur → poumons → retour, adresse `?level=` pour les tests | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LevelManager.mjs` : un niveau en mémoire à la fois, transitions, lien `Interaction` → `EventBus` pour les niveaux de `BaseLevel` | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `LungsLevel.mjs` : alvéole, bronche, capillaire, mission des échanges gazeux (O₂ et CO₂), sang qui passe du bleu au rouge | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | `main.mjs` : parcours scène de départ → cœur → poumons → retour, adresse `?level=` pour les tests | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/niveau-poumons` | Documentation de `LevelManager` et `LungsLevel` dans `docs/MOTEUR_VR.md` | Fait |
-| 2026-11-14 | Hentati Yessmine | `feature/visuels-poumons-cerveau` | Respiration, changement de couleur du sang, shader `neuronSignal.js`, `AudioManager.js` | À faire |
-| 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.js`, `Storage.js` (IndexedDB), déblocage des niveaux, écran d'accueil final, tests de progression (PR #9) | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | VR avec l'API WebXR Device rendue en WebGPU : `XRPresenter.js` (ArrayCamera, copie vers `XRWebGLLayer`), `XRManager.js` (session, `inputSources`, `getPose`), WebGPU obligatoire | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Saisie d'objets : grip en VR, clic droit en bureau (`Interaction.js`) ; molécules à déposer (`LungsLevel`), cœur à sortir du corps (`BodyScene`) | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.js` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.js` | Fait |
+| 2026-11-14 | Hentati Yessmine | `feature/visuels-poumons-cerveau` | Respiration, changement de couleur du sang, shader `neuronSignal.mjs`, `AudioManager.mjs` | À faire |
+| 2026-11-12 | Malouli Melek | `feature/niveau-cerveau` | `BrainLevel.mjs`, `Storage.mjs` (IndexedDB), déblocage des niveaux, écran d'accueil final, tests de progression (PR #9) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | VR avec l'API WebXR Device rendue en WebGPU : `XRPresenter.mjs` (ArrayCamera, copie vers `XRWebGLLayer`), `XRManager.mjs` (session, `inputSources`, `getPose`), WebGPU obligatoire | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Saisie d'objets : grip en VR, clic droit en bureau (`Interaction.mjs`) ; molécules à déposer (`LungsLevel`), cœur à sortir du corps (`BodyScene`) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | PWA : `manifest.webmanifest`, Service Worker `sw.mjs` (réseau d'abord, cache en secours, hors ligne), icônes, `src/pwa.mjs` | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/webgpu-xr-pwa` | Documentation : `MOTEUR_VR.md`, `ARCHITECTURE.md`, README | Fait |
-| 2026-11-12 | Chouari Zaineb | `feature/interactivite-vr` | Retour haptique (vibration des manettes), `Manipulation.js` : rotation sur soi par paliers, rotation et distance de l'objet tenu (joystick, molette, Q / E) | Fait |
+| 2026-11-12 | Chouari Zaineb | `feature/interactivite-vr` | Retour haptique (vibration des manettes), `Manipulation.mjs` : rotation sur soi par paliers, rotation et distance de l'objet tenu (joystick, molette, Q / E) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/pipeline-maths` | `docs/PIPELINE_XR.md` : formalisation mathématique du moteur (poses WebXR, matrices de vue et de projection, raycasting, saisie, téléportation, snap turn, interpolations, zones de dépôt) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Tests de bout en bout Playwright + iwer (casque Meta Quest 3 simulé) : 11 scénarios (WebGPU, session VR, gâchette, grip, joystick, snap turn, mission des poumons, PWA hors ligne) | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/tests-e2e` | Correction trouvée par les tests : places d'arrivée du CO₂ hors de la zone de dépôt de l'alvéole (`LungsLevel`) | Fait |

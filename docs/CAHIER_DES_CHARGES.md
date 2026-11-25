@@ -247,16 +247,16 @@ L’application est organisée en couches. Chaque couche n’utilise que celle q
 | **Fichier ou dossier** | **Contenu**                                                    |
 |------------------------|----------------------------------------------------------------|
 | index.html             | Structure de la PWA, écran d’accueil, boutons d’entrée         |
-| src/main.js            | Initialisation du moteur et de la boucle de rendu              |
-| src/core/              | Renderer.js, XRManager.js, DesktopControls.js, AudioManager.js |
-| src/levels/            | BaseLevel.js, HeartLevel.js, LungsLevel.js, BrainLevel.js      |
-| src/systems/           | Teleport.js, Interaction.js, Particles.js, UIPanel.js          |
-| src/shaders/           | Effets TSL : bloodFlow.js, tissuePulse.js, neuronSignal.js     |
-| src/data/              | GameState.js, Storage.js (IndexedDB)                           |
+| src/main.mjs            | Initialisation du moteur et de la boucle de rendu              |
+| src/core/              | Renderer.mjs, XRManager.mjs, DesktopControls.mjs, AudioManager.mjs |
+| src/levels/            | BaseLevel.mjs, HeartLevel.mjs, LungsLevel.mjs, BrainLevel.mjs      |
+| src/systems/           | Teleport.mjs, Interaction.mjs, Particles.mjs, UIPanel.mjs          |
+| src/shaders/           | Effets TSL : bloodFlow.mjs, tissuePulse.mjs, neuronSignal.mjs     |
+| src/data/              | GameState.mjs, Storage.mjs (IndexedDB)                           |
 | public/assets/models/  | heart.glb, lungs.glb, brain.glb, vessel.glb                    |
 | public/assets/content/ | levels.json : missions, questions et explications en français  |
 | public/assets/audio/   | Sons d’ambiance sous licence CC0                               |
-| manifest.json, sw.js   | Installation et fonctionnement hors ligne                      |
+| manifest.json, sw.mjs   | Installation et fonctionnement hors ligne                      |
 
 ## 4.5 Contraintes techniques
 
