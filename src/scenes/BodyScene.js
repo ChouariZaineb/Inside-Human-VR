@@ -7,6 +7,8 @@
  *   - une plateforme ronde au sol ;
  *   - 3 points de téléportation : vue d'ensemble, vue du thorax, vue de côté ;
  *   - le cœur est sélectionnable (gâchette ou clic) : point d'entrée du niveau 1 ;
+ *   - les poumons et le cerveau de la galerie sont aussi sélectionnables : ils ouvrent leur niveau
+ *     s'il est débloqué, sinon un panneau explique quelle mission réussir d'abord ;
  *   - le cœur peut aussi être SAISI (grip ou clic droit maintenu) et sorti du corps pour l'observer :
  *     lâché, il revient se placer tout seul dans la poitrine.
  *
@@ -17,6 +19,16 @@ import * as THREE from 'three/webgpu';
 import { createRealBody } from '../systems/RealBody.js';
 import { beatJS } from '../shaders/tissuePulse.js';
 import { breathJS } from '../shaders/breathing.js';
+import { UIPanel } from '../systems/UIPanel.js';
+
+/** Niveau associé à chaque organe de la galerie, et mission à réussir pour le débloquer. */
+const ORGAN_LEVELS = {
+	lungs: { name: 'Les poumons', requires: 'la mission du cœur' },
+	brain: { name: 'Le cerveau', requires: 'la mission des poumons' }
+};
+
+/** Durée d'affichage du panneau « niveau verrouillé » (s). */
+const HINT_DURATION = 3.5;
 
 /** Le corps réel mesure 1,8 m : x1,94 → environ 3,5 m de haut, pour l'effet « miniaturisé ». */
 const BODY_SCALE = 3.5 / 1.8;
@@ -30,10 +42,11 @@ const BODY_Z = - 4;
  * @param {import('../core/Engine.js').Engine} context.engine
  * @param {import('../systems/Interaction.js').Interaction} context.interaction
  * @param {import('../systems/Teleport.js').Teleport} context.teleport
+ * @param {import('../data/GameState.js').GameState} [context.gameState] - Progression (niveaux débloqués).
  * @param {(organ: string) => void} [context.onOrganSelected] - Appelée quand on sélectionne un organe.
  * @returns {() => void} Fonction qui libère la scène.
  */
-export function createBodyScene( { engine, interaction, teleport, onOrganSelected = null } ) {
+export function createBodyScene( { engine, interaction, teleport, gameState = null, onOrganSelected = null } ) {
 
 	const root = new THREE.Group();
 	root.name = 'body-scene';
@@ -66,6 +79,52 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 	};
 	const floaters = []; // organes qui flottent et tournent doucement
 	let lungsRoot = null;
+	const organSelectables = []; // poumons et cerveau de la galerie, pointables
+
+	// Panneau affiché quand on pointe un organe dont le niveau est encore verrouillé.
+	const hint = new UIPanel( { width: 1.5, height: 0.5, variant: 'info' } );
+	hint.mesh.visible = false;
+	root.add( hint.mesh );
+	let hintTime = 0;
+
+	/** Montre le panneau à droite de l'organe, quelques secondes. */
+	const showHint = ( holder, content ) => {
+
+		hint.setContent( content );
+		hint.mesh.position.copy( holder.position ).add( new THREE.Vector3( 1.7, 0.2, 0.9 ) );
+		hint.mesh.visible = true;
+		hintTime = HINT_DURATION;
+
+	};
+
+	/** Rend un organe de la galerie pointable : il grossit au survol et ouvre son niveau. */
+	const makeOrganSelectable = ( name, floater ) => {
+
+		const info = ORGAN_LEVELS[ name ];
+		interaction.addSelectable( floater.holder, {
+			highlight: false,
+			onHover: ( { hovered } ) => { floater.hovered = hovered; },
+			onSelect: ( { source } ) => {
+
+				const unlocked = ! gameState || gameState.isUnlocked( name );
+				console.log( `[BodyScene] ${info.name} sélectionnés (${source}) : ${unlocked ? 'ouverture du niveau' : 'niveau verrouillé'}` );
+				if ( unlocked ) {
+
+					if ( onOrganSelected ) onOrganSelected( name );
+					return;
+
+				}
+				showHint( floater.holder, {
+					title: `${info.name} : verrouillé`,
+					body: `Réussis d'abord ${info.requires} pour débloquer ce niveau.`,
+					variant: 'error'
+				} );
+
+			}
+		} );
+		organSelectables.push( floater.holder );
+
+	};
 
 	/** Sort une partie du corps pour la poser dans la galerie (RealBody ne la déplace plus). */
 	const detach = ( real, name, scale ) => {
@@ -96,8 +155,10 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 
 			const item = detach( real, name, ORGAN_SCALE );
 			if ( ! item ) continue;
-			floaters.push( { holder: item.holder, baseY: item.holder.position.y, spin: GALLERY[ name ].spin } );
+			const floater = { holder: item.holder, baseY: item.holder.position.y, spin: GALLERY[ name ].spin, hovered: false };
+			floaters.push( floater );
 			if ( name === 'lungs' ) lungsRoot = item.part.root;
+			makeOrganSelectable( name, floater );
 
 		}
 
@@ -184,6 +245,7 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 
 				f.holder.rotation.y += delta * f.spin;
 				f.holder.position.y = f.baseY + 0.06 * Math.sin( time * 0.9 + f.baseY );
+				f.holder.scale.setScalar( ORGAN_SCALE * ( f.hovered ? 1.15 : 1 ) ); // grossit au survol
 
 			}
 
@@ -196,6 +258,15 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 			heartPivot.position.lerpVectors( heartReturn.position, heartHome.position, k );
 			heartPivot.quaternion.slerpQuaternions( heartReturn.quaternion, heartHome.quaternion, k );
 			if ( heartReturn.t >= 1 ) heartReturn = null;
+
+		}
+
+		// Panneau « verrouillé » : tourné vers l'utilisateur, puis masqué.
+		if ( hintTime > 0 ) {
+
+			hintTime -= delta;
+			hint.update( engine.camera );
+			if ( hintTime <= 0 ) hint.mesh.visible = false;
 
 		}
 
@@ -213,6 +284,8 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 		stopUpdate();
 		teleport.clear();
 		interaction.removeSelectable( heartPivot );
+		for ( const holder of organSelectables ) interaction.removeSelectable( holder );
+		hint.dispose();
 		engine.scene.remove( root );
 		engine.scene.background = previousBackground;
 		root.traverse( ( child ) => {
