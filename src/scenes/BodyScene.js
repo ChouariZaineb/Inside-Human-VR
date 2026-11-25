@@ -15,6 +15,7 @@
  */
 import * as THREE from 'three/webgpu';
 import { createRealBody } from '../systems/RealBody.js';
+import { UIPanel } from '../systems/UIPanel.js';
 import { beatJS } from '../shaders/tissuePulse.js';
 import { breathJS } from '../shaders/breathing.js';
 
@@ -145,6 +146,17 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 
 	} ).catch( ( error ) => console.warn( 'Corps indisponible :', error.message ?? error ) );
 
+	// Panneau d'aide, visible seulement en VR (en mode bureau, l'écran d'accueil donne déjà les consignes).
+	const help = new UIPanel( { width: 1.3, height: 0.8 } );
+	help.setContent( {
+		title: 'Bienvenue dans le corps humain',
+		body: 'Vise le cœur avec le rayon et appuie sur la gâchette (ou pince les doigts) pour commencer la mission.\nVise un cercle au sol pour te téléporter.',
+		variant: 'info'
+	} );
+	help.setPosition( 1.25, 1.25, - 2 );
+	help.mesh.visible = false;
+	root.add( help.mesh );
+
 	// 2. Plateforme ronde sous le corps et zone de déplacement.
 	const platform = new THREE.Mesh(
 		new THREE.CircleGeometry( 6, 64 ).rotateX( - Math.PI / 2 ),
@@ -176,6 +188,8 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 	const stopUpdate = engine.onUpdate( ( delta ) => {
 
 		time += delta;
+		help.mesh.visible = engine.isVR();
+		if ( help.mesh.visible ) help.update( engine.camera );
 		if ( body ) {
 
 			body.update( delta );
@@ -215,6 +229,7 @@ export function createBodyScene( { engine, interaction, teleport, onOrganSelecte
 		interaction.removeSelectable( heartPivot );
 		engine.scene.remove( root );
 		engine.scene.background = previousBackground;
+		help.texture.dispose();
 		root.traverse( ( child ) => {
 
 			if ( child.geometry ) child.geometry.dispose();
