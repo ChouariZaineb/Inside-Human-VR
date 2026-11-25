@@ -1,26 +1,36 @@
 /**
  * BrainLevel.js — Niveau 3 : transmettre un influx nerveux.
  *
- * Le contenu pédagogique reste dans levels.json. Le niveau propose des neurones
- * provisoires (remplaçables par des modèles GLB) et une mission séquentielle :
- * neurone sensoriel → neurone relais → neurone moteur.
+ * Le contenu pédagogique reste dans levels.json. Les neurones sont un modèle 3D
+ * importé (neuron.glb), couché à l'horizontale : trois neurones cliquables pour la
+ * mission séquentielle (sensoriel → relais → moteur).
  *
  * Contrat commun avec LevelManager : load/start/update/dispose et objets pointables.
  */
 import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { BaseLevel } from './BaseLevel.js';
 import { PHASE } from '../data/GameState.js';
 
 const NODES = [
-  { id: 'sensory_neuron', position: [-1.1, 1.55, -3.35], color: 0x4c9cff },
-  { id: 'relay_neuron', position: [0, 2.05, -3.55], color: 0xbb7cff },
-  { id: 'motor_neuron', position: [1.1, 1.55, -3.35], color: 0x38d9b4 },
+  { id: 'sensory_neuron', position: [-0.95, 1.5, -3.3], color: 0x4c9cff },
+  { id: 'relay_neuron', position: [0.5, 2.35, -3.5], color: 0xbb7cff },
+  { id: 'motor_neuron', position: [1.95, 1.5, -3.3], color: 0x38d9b4 },
 ];
 
-const PANEL_POS = { x: -2.1, y: 1.8, z: -2.1 };
-const BUTTON_POS = { x: -2.1, y: 0.85, z: -2.1 };
+const PANEL_POS = { x: -2.15, y: 1.8, z: -2.1 };
+const BUTTON_POS = { x: -2.15, y: 0.85, z: -2.1 };
 const FLASH = { info: 0x2164cc, success: 0x31ba65, error: 0xeb4545 };
 const SIGNAL_DURATION = 0.9;
+
+/** Neurone multipolaire (Alain Sorazu, CC BY-SA 4.0, modifié) et longueur d'un neurone de la mission (m). */
+const NEURON_URL = 'assets/models/neuron.glb';
+const NEURON_LENGTH = 1.65;
+/** Zone pointable autour d'un neurone (les branches sont trop fines pour être visées au rayon). */
+const HIT_SIZE = [1.35, 0.7, 0.4];
+/** Luminosité au repos d'un neurone de la mission. */
+const REST_GLOW = 0.55;
 
 export class BrainLevel extends BaseLevel {
   constructor(options) {
@@ -35,8 +45,9 @@ export class BrainLevel extends BaseLevel {
   }
 
   async onLoad() {
+    const template = await this._loadNeuronTemplate();
     for (const node of NODES) {
-      const neuron = createNeuron(node.color);
+      const neuron = createMissionNeuron(template, node.color);
       neuron.position.set(...node.position);
       neuron.name = node.id;
       this.group.add(neuron);
@@ -64,7 +75,7 @@ export class BrainLevel extends BaseLevel {
       new THREE.CapsuleGeometry(0.16, 0.48, 8, 16),
       new THREE.MeshStandardMaterial({ color: 0xe78a91, roughness: 0.6 }),
     );
-    muscle.position.set(2.0, 1.35, -3.35);
+    muscle.position.set(3.15, 1.05, -3.3);
     muscle.rotation.z = Math.PI / 2;
     muscle.name = 'muscle-cible';
     this.group.add(muscle);
@@ -81,6 +92,34 @@ export class BrainLevel extends BaseLevel {
     this.mainPanel = this.addPanel({ width: 1.6, height: 1.0 }, PANEL_POS);
     this.button = this.addPanel({ width: 1.0, height: 0.3, variant: 'button' }, BUTTON_POS);
     this.addInteractable(this.button.mesh);
+  }
+
+  /**
+   * Charge le modèle et le normalise : couché (corps cellulaire à gauche, terminaisons à droite),
+   * centré, de longueur 1. Renvoie null si le fichier manque : les zones pointables sont alors affichées.
+   */
+  async _loadNeuronTemplate() {
+    const base = import.meta.env.BASE_URL;
+    const draco = new DRACOLoader().setDecoderPath(`${base}draco/`);
+    try {
+      const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(`${base}${NEURON_URL}`);
+      const lying = new THREE.Group();
+      lying.rotation.z = Math.PI / 2; // le haut du modèle passe à gauche
+      lying.add(gltf.scene);
+      const holder = new THREE.Group();
+      holder.add(lying);
+      const box = new THREE.Box3().setFromObject(holder);
+      const scale = 1 / box.getSize(new THREE.Vector3()).x;
+      lying.scale.setScalar(scale);
+      lying.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-scale));
+      holder.updateMatrixWorld(true);
+      return holder;
+    } catch (error) {
+      console.warn('[Cerveau] Neurone 3D indisponible :', error.message ?? error);
+      return null;
+    } finally {
+      draco.dispose();
+    }
   }
 
   /** Points proposés à la téléportation ; pas de déplacement continu. */
@@ -250,7 +289,12 @@ export class BrainLevel extends BaseLevel {
       const remaining = Math.max(0, value - delta * 1.5);
       this._flashes.set(id, remaining);
       this.elements.get(id)?.traverse((mesh) => {
-        if (mesh.material?.emissive) mesh.material.emissiveIntensity = remaining;
+        const material = mesh.material;
+        if (!material?.emissive) return;
+        const rest = material.userData.rest; // neurones : couleur propre ; synapse : éteinte
+        const floor = rest?.intensity ?? 0;
+        material.emissiveIntensity = floor + (1 - floor) * remaining;
+        if (remaining === 0 && rest) material.emissive.setHex(rest.color);
       });
     }
 
@@ -278,21 +322,34 @@ export class BrainLevel extends BaseLevel {
   }
 }
 
-function createNeuron(color) {
+/** Copie un matériau avec sa couleur de repos (les flashs de la mission y reviennent). */
+function tint(material, color, intensity, opacity = 1) {
+  const copy = material.clone();
+  copy.color.setHex(color);
+  copy.emissive.setHex(color);
+  copy.emissiveIntensity = intensity;
+  copy.opacity = opacity;
+  copy.transparent = opacity < 1;
+  copy.userData.rest = { color, intensity };
+  return copy;
+}
+
+/** Un neurone de la mission : le modèle teinté et sa zone pointable invisible. */
+function createMissionNeuron(template, color) {
   const root = new THREE.Group();
   root.add(new THREE.Mesh(
-    new THREE.SphereGeometry(0.27, 22, 16),
-    new THREE.MeshStandardMaterial({ color, emissive: 0x000000, roughness: 0.38 }),
+    new THREE.BoxGeometry(...HIT_SIZE),
+    template
+      ? new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+      : new THREE.MeshStandardMaterial({ color, emissive: 0x000000 }), // secours si le modèle manque
   ));
-  for (let i = 0; i < 7; i += 1) {
-    const angle = (i / 7) * Math.PI * 2;
-    const branch = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.018, 0.035, 0.38, 7),
-      new THREE.MeshStandardMaterial({ color, emissive: 0x000000 }),
-    );
-    branch.position.set(Math.cos(angle) * 0.39, Math.sin(angle) * 0.39, 0);
-    branch.rotation.z = angle - Math.PI / 2;
-    root.add(branch);
+  if (template) {
+    const model = template.clone(true);
+    model.scale.setScalar(NEURON_LENGTH);
+    model.traverse((mesh) => {
+      if (mesh.isMesh) mesh.material = tint(mesh.material, color, REST_GLOW);
+    });
+    root.add(model);
   }
   return root;
 }

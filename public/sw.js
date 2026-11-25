@@ -10,7 +10,7 @@
  * Au premier chargement, la page s'affiche AVANT que le Service Worker soit actif : pwa.js lui envoie
  * alors la liste des fichiers déjà chargés (message CACHE_URLS) pour qu'il les range aussi.
  */
-const CACHE = 'inside-human-vr-cdn-r187-biologie-v2';
+const CACHE = 'inside-human-vr-cdn-r187-biologie-v6';
 const THREE_CDN_ORIGIN = 'https://cdn.jsdelivr.net';
 const THREE_CDN_PREFIX = '/npm/three@0.187.0/';
 
@@ -31,6 +31,7 @@ const APP_SHELL = [
 	'./assets/models/brain.glb',
 	'./assets/models/heart.glb',
 	'./assets/models/vessels.glb',
+	'./assets/models/neuron.glb',
 	// Molécules Blender de la mission des poumons (disponibles hors ligne).
 	'./assets/models/oxygen_o2.glb',
 	'./assets/models/carbon_dioxide_co2.glb',
