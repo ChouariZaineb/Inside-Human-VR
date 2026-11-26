@@ -69,7 +69,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Lancer les 11 tests de bout en bout
-        # Sous Linux, WebGPU passe par SwiftShader (rendu logiciel) : voir playwright.config.js.
+        # Sous Linux, WebGPU passe par SwiftShader (rendu logiciel) : voir playwright.config.mjs.
         run: npm run test:e2e
         env:
           HEADLESS: '1'

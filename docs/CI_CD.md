@@ -31,7 +31,7 @@ flowchart LR
 | 6 | Envoi du rapport | Le rapport Playwright (captures et traces en cas d'échec) est téléchargeable 14 jours depuis l'onglet **Actions** |
 
 Sur les serveurs Linux de GitHub, il n'y a pas de carte graphique : WebGPU passe par **SwiftShader**, le rendu logiciel
-de Chromium (options dans `playwright.config.js`). Le code testé est exactement le même que sur un PC.
+de Chromium (options dans `playwright.config.mjs`). Le code testé est exactement le même que sur un PC.
 
 **Résultat** : chaque pull request affiche une **coche verte** (tout passe) ou une **croix rouge** (un test échoue), avec le
 détail dans l'onglet **Actions**. On ne fusionne une branche que si la coche est verte.
@@ -48,8 +48,8 @@ détail dans l'onglet **Actions**. On ne fusionne une branche que si la coche es
 | 4 | L'application est en ligne : **https://chouarizaineb.github.io/Inside-Human-VR/** |
 
 **Pourquoi ça fonctionne sans modification du code :**
-- `vite.config.js` utilise `base: './'` : tous les chemins sont relatifs, donc l'application marche dans le sous-dossier `/Inside-Human-VR/` ;
-- `levels.json` est chargé avec le chemin de base de Vite (`BaseLevel.js`) ;
+- `vite.config.mjs` utilise `base: './'` : tous les chemins sont relatifs, donc l'application marche dans le sous-dossier `/Inside-Human-VR/` ;
+- `levels.json` est chargé avec le chemin de base de Vite (`BaseLevel.mjs`) ;
 - le Service Worker est enregistré avec une portée relative (`./sw.js`, `scope: './'`) ;
 - GitHub Pages fournit le **HTTPS**, obligatoire pour WebXR et pour le Service Worker.
 

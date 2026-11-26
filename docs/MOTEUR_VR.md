@@ -4,25 +4,25 @@ Ce document explique chaque fichier du moteur : ce qu'il fait, comment il le fai
 
 | Fichier | En une phrase |
 |---|---|
-| `vite.config.js` | Configure l'outil de développement Vite |
-| `src/main.js` | Assemble toutes les pièces et lance l'application |
-| `src/core/Renderer.js` | Crée la scène, la caméra, les lumières et le WebGPURenderer |
-| `src/core/Engine.js` | L'API centrale que tout le monde utilise, et la boucle de rendu |
-| `src/core/XRManager.js` | Ouvre la session VR avec l'API WebXR Device et suit les deux manettes |
-| `src/core/XRPresenter.js` | Rend les deux yeux en WebGPU et envoie l'image au casque |
-| `src/core/DesktopControls.js` | Le mode bureau : regarder à la souris, viser au réticule |
-| `src/systems/Interaction.js` | Savoir ce que l'utilisateur vise et sélectionne (raycasting) |
-| `src/systems/Teleport.js` | Se déplacer par téléportation, avec un fondu au noir |
-| `src/systems/Manipulation.js` | Joysticks : tourner sur soi, faire tourner et approcher l'objet tenu |
-| `src/scenes/BodyScene.js` | La scène de départ : le corps humain |
-| `src/core/LevelManager.js` | Charge un niveau à la fois et passe de l'un à l'autre |
-| `src/levels/LungsLevel.js` | Le niveau 2 : les poumons et les échanges gazeux |
-| `src/debug/TestScene.js` | Une scène de test du moteur, sans modèle |
-| `src/pwa.js`, `public/sw.js`, `public/manifest.webmanifest` | La Progressive Web App : installation, hors ligne, badge de connexion |
+| `vite.config.mjs` | Configure l'outil de développement Vite |
+| `src/main.mjs` | Assemble toutes les pièces et lance l'application |
+| `src/core/Renderer.mjs` | Crée la scène, la caméra, les lumières et le WebGPURenderer |
+| `src/core/Engine.mjs` | L'API centrale que tout le monde utilise, et la boucle de rendu |
+| `src/core/XRManager.mjs` | Ouvre la session VR avec l'API WebXR Device et suit les deux manettes |
+| `src/core/XRPresenter.mjs` | Rend les deux yeux en WebGPU et envoie l'image au casque |
+| `src/core/DesktopControls.mjs` | Le mode bureau : regarder à la souris, viser au réticule |
+| `src/systems/Interaction.mjs` | Savoir ce que l'utilisateur vise et sélectionne (raycasting) |
+| `src/systems/Teleport.mjs` | Se déplacer par téléportation, avec un fondu au noir |
+| `src/systems/Manipulation.mjs` | Joysticks : tourner sur soi, faire tourner et approcher l'objet tenu |
+| `src/scenes/BodyScene.mjs` | La scène de départ : le corps humain |
+| `src/core/LevelManager.mjs` | Charge un niveau à la fois et passe de l'un à l'autre |
+| `src/levels/LungsLevel.mjs` | Le niveau 2 : les poumons et les échanges gazeux |
+| `src/debug/TestScene.mjs` | Une scène de test du moteur, sans modèle |
+| `src/pwa.mjs`, `public/sw.mjs`, `public/manifest.webmanifest` | La Progressive Web App : installation, hors ligne, badge de connexion |
 
 ---
 
-## 1. `vite.config.js` : la configuration
+## 1. `vite.config.mjs` : la configuration
 
 **Vite** est l'outil qui lance le serveur de développement (`npm run dev`) et fabrique la version finale (`npm run build`).
 
@@ -33,7 +33,7 @@ Ce document explique chaque fichier du moteur : ce qu'il fait, comment il le fai
 | `target: 'esnext'` | On produit du JavaScript moderne : WebGPU n'existe de toute façon que dans les navigateurs récents. |
 | `server.https` | Ajouté par Yessmine : si un certificat existe dans `certs/`, le serveur passe en HTTPS (utile pour un vrai casque en réseau). |
 
-## 2. `src/main.js` : l'assemblage
+## 2. `src/main.mjs` : l'assemblage
 
 C'est le point d'entrée, chargé par `index.html`. Il crée les objets dans l'ordre :
 
@@ -48,7 +48,7 @@ C'est le point d'entrée, chargé par `index.html`. Il crée les objets dans l'o
 
 `await` au niveau du module (« top-level await ») est possible grâce à `target: 'esnext'`.
 
-## 3. `src/core/Renderer.js` : le rendu
+## 3. `src/core/Renderer.mjs` : le rendu
 
 **Ce qu'il crée :**
 - `scene` : la scène 3D, avec une couleur de fond.
@@ -58,12 +58,12 @@ C'est le point d'entrée, chargé par `index.html`. Il crée les objets dans l'o
 
 **Points importants :**
 - `await renderer.init()` : WebGPU s'initialise de façon **asynchrone** (il faut demander la carte graphique). La console affiche `[Renderer] Backend : WebGPU`.
-- **WebGPU obligatoire** : le `WebGPURenderer` de Three.js sait repasser tout seul sur WebGL 2 quand le navigateur n'a pas WebGPU. Nous refusons ce repli : si `navigator.gpu` n'existe pas, ou si le backend obtenu n'est pas WebGPU, `init()` lève une erreur, et `main.js` l'affiche sur l'écran d'accueil en bloquant les boutons.
+- **WebGPU obligatoire** : le `WebGPURenderer` de Three.js sait repasser tout seul sur WebGL 2 quand le navigateur n'a pas WebGPU. Nous refusons ce repli : si `navigator.gpu` n'existe pas, ou si le backend obtenu n'est pas WebGPU, `init()` lève une erreur, et `main.mjs` l'affiche sur l'écran d'accueil en bloquant les boutons.
 - `render()` : mode bureau, une caméra, via `DirectRenderPipeline`.
 - `renderStereo(arrayCamera)` : mode VR, **les deux yeux en une seule passe WebGPU**. L'`ArrayCamera` contient une sous-caméra par œil, chacune avec son `viewport` (moitié gauche, moitié droite de l'image).
 - `setXRSize(l, h)` / `restoreSize()` : en VR, le canvas prend la taille de l'image du casque (pixel ratio 1) ; on revient à la taille de la fenêtre en sortant.
 
-## 4. `src/core/Engine.js` : l'API centrale
+## 4. `src/core/Engine.mjs` : l'API centrale
 
 C'est une **façade** : une seule entrée simple pour tout le moteur.
 
@@ -87,7 +87,7 @@ C'est une **façade** : une seule entrée simple pour tout le moteur.
 
 **Deux rythmes d'images** : en mode bureau, `setAnimationLoop` suit l'écran ; en VR, c'est `session.requestAnimationFrame` (le casque, 72 à 120 images par seconde) qui appelle `step` puis `renderStereo`.
 
-## 5. `src/core/XRManager.js` : la session VR avec l'API WebXR Device
+## 5. `src/core/XRManager.mjs` : la session VR avec l'API WebXR Device
 
 **Vérification du support (`init`)** :
 - Si `navigator.xr` n'existe pas, la VR est impossible (navigateur non compatible ou page non sécurisée).
@@ -106,7 +106,7 @@ C'est une **façade** : une seule entrée simple pour tout le moteur.
 - À chaque image : `frame.getPose(source.targetRaySpace, localFloor)` et `frame.getPose(source.gripSpace, localFloor)` donnent la matrice de chaque manette.
 - Événements émis pour les autres modules : `select`, `squeezestart`, `squeezeend`, `sessionstart`, `sessionend`.
 
-## 6. `src/core/DesktopControls.js` : le mode bureau
+## 6. `src/core/DesktopControls.mjs` : le mode bureau
 
 - `PointerLockControls` (addon de Three.js) : la souris est **capturée** par la page et oriente le regard. Échap la libère (comportement du navigateur).
 - Un **réticule** (petit point au centre de l'écran) sert de viseur.
@@ -114,7 +114,7 @@ C'est une **façade** : une seule entrée simple pour tout le moteur.
 - `setEnabled(false)` désactive tout pendant la VR.
 - `lock()` doit être appelé depuis un clic de l'utilisateur : c'est une règle de sécurité du navigateur.
 
-## 7. `src/systems/Interaction.js` : viser et sélectionner
+## 7. `src/systems/Interaction.mjs` : viser et sélectionner
 
 **Le raycasting** : on lance un rayon invisible et on cherche le premier objet touché.
 - En VR : un rayon par manette (`raycaster.setFromXRController(controller)`).
@@ -138,7 +138,7 @@ C'est le **patron Strategy** : la même logique avec deux sources d'entrée diff
 **API** : `addSelectable(objet, { onHover, onSelect, highlight, grabbable, onGrab, onRelease })`, `removeSelectable(objet)`, `clear()`, `isHeld(objet)`.
 Un objet enregistré l'est avec tous ses enfants : viser un enfant compte comme viser le parent.
 
-## 8. `src/systems/Teleport.js` : se déplacer
+## 8. `src/systems/Teleport.mjs` : se déplacer
 
 - `setPoints([{ position, rotationY }])` crée un **disque bleu** au sol pour chaque point et l'enregistre dans `Interaction`.
 - Viser un disque le fait grossir et tourner ; le sélectionner lance `teleportTo(point)`.
@@ -147,7 +147,7 @@ Un objet enregistré l'est avec tous ses enfants : viser un enfant compte comme 
 - Touches 1 à 9 en mode bureau : téléportation directe vers le point n°1 à 9.
 - **Pourquoi la téléportation ?** Un déplacement continu en VR provoque le mal des transports (les yeux voient bouger, le corps ne sent rien).
 
-## 9. `src/scenes/BodyScene.js` : la scène du corps humain
+## 9. `src/scenes/BodyScene.mjs` : la scène du corps humain
 
 C'est la scène affichée au démarrage. Elle répond à la demande : *afficher le modèle 3D du corps humain dans l'environnement immersive-vr*.
 
@@ -160,13 +160,13 @@ C'est la scène affichée au démarrage. Elle répond à la demande : *afficher 
 6. `engine.onUpdate((delta) => body.update(delta))` : le cœur bat et les flèches du sang avancent à chaque image.
 7. La fonction `dispose()` renvoyée libère tout proprement (utile quand on changera de niveau).
 
-## 10. `src/debug/TestScene.js` : la scène de test
+## 10. `src/debug/TestScene.mjs` : la scène de test
 
 Une scène sans modèle externe pour tester le moteur seul : un tunnel (`TubeGeometry`) qui évoque un vaisseau sanguin,
 un sol, 3 points de téléportation et 3 sphères sélectionnables (globule rouge, globule blanc, plaquette).
 Elle sert aussi d'exemple d'utilisation de l'API du moteur. On l'ouvre avec `http://localhost:5173/?test`.
 
-## 11. `src/core/LevelManager.js` : passer d'un niveau à l'autre
+## 11. `src/core/LevelManager.mjs` : passer d'un niveau à l'autre
 
 Il garde **un seul niveau en mémoire** à la fois. Pour charger un niveau (`load(id)`) :
 
@@ -180,9 +180,9 @@ Il garde **un seul niveau en mémoire** à la fois. Pour charger un niveau (`loa
 
 **La suite des niveaux** : quand un niveau émet `EVENTS.LEVEL_COMPLETED`, `LevelManager` charge le niveau qu'il débloque (champ `unlocks` de `levels.json`) s'il existe, sinon il revient à la scène de départ (`home`).
 
-Dans `main.js` : `home` (le corps humain), `heart` (`HeartLevel` de Melek) et `lungs` (`LungsLevel`) sont enregistrés. Sélectionner le cœur dans la scène de départ lance le niveau 1. Pour tester un niveau directement : `http://localhost:5173/?level=lungs`.
+Dans `main.mjs` : `home` (le corps humain), `heart` (`HeartLevel` de Melek) et `lungs` (`LungsLevel`) sont enregistrés. Sélectionner le cœur dans la scène de départ lance le niveau 1. Pour tester un niveau directement : `http://localhost:5173/?level=lungs`.
 
-## 12. `src/levels/LungsLevel.js` : le niveau des poumons
+## 12. `src/levels/LungsLevel.mjs` : le niveau des poumons
 
 Il **hérite de `BaseLevel`** (classe de Melek, patron Template Method) : il ne redéfinit que les « crochets » `onLoad`, `onStart`, `onSelect`, `onUpdate` et `onDispose`. Les textes viennent de `levels.json`.
 
@@ -198,7 +198,7 @@ Il **hérite de `BaseLevel`** (classe de Melek, patron Template Method) : il ne 
 - **Le sang change de couleur** : la couleur du capillaire passe du bleu au rouge selon le nombre d'O₂ arrivés (`Color.lerp`).
 - À la fin : `gameState.finishLevel()` enregistre le score et débloque le niveau du cerveau.
 
-## 13. `src/core/XRPresenter.js` : la VR rendue en WebGPU
+## 13. `src/core/XRPresenter.mjs` : la VR rendue en WebGPU
 
 Il fait le lien entre la session WebXR et le `WebGPURenderer`.
 
@@ -224,8 +224,8 @@ Il fait le lien entre la session WebXR et le `WebGPURenderer`.
 | Fichier | Rôle |
 |---|---|
 | `public/manifest.webmanifest` | Nom, description, icônes (192, 512, maskable), couleurs, `display: standalone`, `start_url` et `scope` relatifs (`./`) : l'application est **installable** |
-| `public/sw.js` | Le **Service Worker** : à l'installation, il range la coquille de l'application ; ensuite, stratégie « **réseau d'abord, cache en secours** » : chaque fichier téléchargé est copié dans le cache, et hors ligne il est servi depuis le cache |
-| `src/pwa.js` | `navigator.serviceWorker.register('./sw.js')`, envoi au Service Worker des fichiers déjà chargés (`performance.getEntriesByType('resource')`), badge de connexion, bouton d'installation |
+| `public/sw.mjs` | Le **Service Worker** : à l'installation, il range la coquille de l'application ; ensuite, stratégie « **réseau d'abord, cache en secours** » : chaque fichier téléchargé est copié dans le cache, et hors ligne il est servi depuis le cache |
+| `src/pwa.mjs` | `navigator.serviceWorker.register('./sw.js')`, envoi au Service Worker des fichiers déjà chargés (`performance.getEntriesByType('resource')`), badge de connexion, bouton d'installation |
 | `index.html` | `<link rel="manifest">`, icônes, `theme-color`, badge de connexion, bouton d'installation |
 
 **Ce que voit l'utilisateur** :
@@ -236,7 +236,7 @@ Deux détails techniques :
 - `ignoreVary: true` dans `caches.match` : les scripts de Vite sont chargés avec l'attribut `crossorigin`, donc avec un en-tête `Origin` que n'avaient pas les copies rangées à l'installation.
 - Le nom du cache contient une version (`inside-human-vr-v2`) : à chaque changement de version, l'activation supprime les anciens caches.
 
-**Vérifier** : `npm run build` puis `npm run preview`, Chrome → F12 → onglet **Application** → *Manifest* (nom, icônes) et *Service Workers* (activé). Cocher **Offline**, recharger : l'application démarre, et le badge passe à « Hors ligne · mode cache ». Le test automatique `tests/e2e/pwa.spec.js` vérifie la même chose.
+**Vérifier** : `npm run build` puis `npm run preview`, Chrome → F12 → onglet **Application** → *Manifest* (nom, icônes) et *Service Workers* (activé). Cocher **Offline**, recharger : l'application démarre, et le badge passe à « Hors ligne · mode cache ». Le test automatique `tests/e2e/pwa.spec.mjs` vérifie la même chose.
 
 ## 15. Interactivité avancée : vibrations et joysticks
 
@@ -252,7 +252,7 @@ Deux détails techniques :
 
 **Joysticks (`XRManager.getThumbstick`)** : avec le mapping standard des manettes (`xr-standard`), le joystick correspond aux axes 2 (gauche-droite) et 3 (haut-bas) de `gamepad.axes`, entre -1 et 1.
 
-**`src/systems/Manipulation.js`** utilise ces axes à chaque image :
+**`src/systems/Manipulation.mjs`** utilise ces axes à chaque image :
 - **mains libres** : joystick à gauche ou à droite → **rotation sur soi de 30°** (*snap turn*). Un palier est déclenché au-delà de 0,7 et le suivant seulement après un retour sous 0,3 (hystérésis), pour ne pas enchaîner les rotations. La rotation se fait **autour de la tête** : on ramène la tête à l'origine, on fait tourner `player`, puis on remet la tête en place ;
 - **objet en main** : gauche-droite → l'objet **tourne** sur lui-même (`rotateY`, 2,5 rad/s) ; haut-bas → il **s'éloigne ou se rapproche** de la main (de 0,15 m à 3 m, 1,2 m/s) ;
 - **en mode bureau** : la **molette** règle la distance de l'objet tenu (clic droit), les touches **Q** et **E** le font tourner.

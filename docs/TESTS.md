@@ -6,7 +6,7 @@ Le projet a deux niveaux de tests :
 
 | Niveau | Outil | Commande | Ce qui est testé |
 |---|---|---|---|
-| Tests unitaires | `node --test` (intégré à Node.js) | `npm test` | La logique de progression : score, déblocage des niveaux, reprise du parcours (`tests/progression.test.js`, Melek) |
+| Tests unitaires | `node --test` (intégré à Node.js) | `npm test` | La logique de progression : score, déblocage des niveaux, reprise du parcours (`tests/progression.test.mjs`, Melek) |
 | **Tests de bout en bout** | **Playwright** + **iwer** | `npm run test:e2e` | L'application complète dans un vrai Chrome : WebGPU, VR simulée, interactions, mission complète, PWA hors ligne (`tests/e2e/`, Zaineb) |
 
 ---
@@ -23,17 +23,17 @@ Le projet a deux niveaux de tests :
 
 | Fichier | Scénario | Exigence du cahier des charges |
 |---|---|---|
-| `demarrage.spec.js` | Le rendu utilise le backend **WebGPU** de Three.js r187 | ENF-03 |
-| `demarrage.spec.js` | La scène de départ affiche le **corps humain** | EF-01, EF-03 |
-| `demarrage.spec.js` | La page déclare le **manifeste** et enregistre le **Service Worker** | ENF-04 |
-| `vr.spec.js` | La session **`immersive-vr`** est rendue en **WebGPU**, avec les deux manettes suivies | EF-02 |
-| `vr.spec.js` | La **gâchette** sur le cœur ouvre le niveau du cœur, et la manette **vibre** | EF-05 |
-| `vr.spec.js` | Le **grip** saisit le cœur, le **joystick** le fait tourner, il revient à sa place une fois lâché | Interactivité |
-| `vr.spec.js` | Le joystick fait **tourner l'utilisateur de 30°** (*snap turn*) | ENF-06 (confort) |
-| `poumons.spec.js` | Déposer les **6 molécules** au bon endroit termine la mission avec **100 points** et un sang **rouge** | EF-07, EF-09 |
-| `poumons.spec.js` | Une molécule lâchée **hors des zones** retourne à sa place sans changer le score | EF-07 |
-| `pwa.spec.js` | Le manifeste décrit une application **installable** (nom, `standalone`, icônes 192 et 512 accessibles) | ENF-04 |
-| `pwa.spec.js` | Après une première visite, l'application **démarre hors ligne**, et le badge affiche « Hors ligne · mode cache » | ENF-04 |
+| `demarrage.spec.mjs` | Le rendu utilise le backend **WebGPU** de Three.js r187 | ENF-03 |
+| `demarrage.spec.mjs` | La scène de départ affiche le **corps humain** | EF-01, EF-03 |
+| `demarrage.spec.mjs` | La page déclare le **manifeste** et enregistre le **Service Worker** | ENF-04 |
+| `vr.spec.mjs` | La session **`immersive-vr`** est rendue en **WebGPU**, avec les deux manettes suivies | EF-02 |
+| `vr.spec.mjs` | La **gâchette** sur le cœur ouvre le niveau du cœur, et la manette **vibre** | EF-05 |
+| `vr.spec.mjs` | Le **grip** saisit le cœur, le **joystick** le fait tourner, il revient à sa place une fois lâché | Interactivité |
+| `vr.spec.mjs` | Le joystick fait **tourner l'utilisateur de 30°** (*snap turn*) | ENF-06 (confort) |
+| `poumons.spec.mjs` | Déposer les **6 molécules** au bon endroit termine la mission avec **100 points** et un sang **rouge** | EF-07, EF-09 |
+| `poumons.spec.mjs` | Une molécule lâchée **hors des zones** retourne à sa place sans changer le score | EF-07 |
+| `pwa.spec.mjs` | Le manifeste décrit une application **installable** (nom, `standalone`, icônes 192 et 512 accessibles) | ENF-04 |
+| `pwa.spec.mjs` | Après une première visite, l'application **démarre hors ligne**, et le badge affiche « Hors ligne · mode cache » | ENF-04 |
 
 ## 3. Lancer les tests
 
@@ -48,7 +48,7 @@ Puis :
 ```
 npm run test:e2e           # lance les 11 scénarios (environ 3 minutes)
 npm run test:e2e:report    # ouvre le rapport HTML du dernier passage
-npx playwright test vr     # lance seulement les tests d'un fichier (ici vr.spec.js)
+npx playwright test vr     # lance seulement les tests d'un fichier (ici vr.spec.mjs)
 ```
 
 - Sous **Windows** et **macOS**, Playwright utilise le **Chrome installé** sur la machine (`channel: 'chrome'`) : rien à télécharger, et WebGPU utilise la vraie carte graphique.

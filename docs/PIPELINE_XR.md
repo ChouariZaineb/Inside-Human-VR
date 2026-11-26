@@ -21,12 +21,12 @@ flowchart LR
 
 | Étape | Fichier |
 |---|---|
-| Session, manettes | `src/core/XRManager.js` |
-| Poses, rendu stéréo, copie | `src/core/XRPresenter.js` |
-| Rendu WebGPU | `src/core/Renderer.js` |
-| Raycasting, saisie | `src/systems/Interaction.js` |
-| Téléportation | `src/systems/Teleport.js` |
-| Rotation sur soi, manipulation | `src/systems/Manipulation.js` |
+| Session, manettes | `src/core/XRManager.mjs` |
+| Poses, rendu stéréo, copie | `src/core/XRPresenter.mjs` |
+| Rendu WebGPU | `src/core/Renderer.mjs` |
+| Raycasting, saisie | `src/systems/Interaction.mjs` |
+| Téléportation | `src/systems/Teleport.mjs` |
+| Rotation sur soi, manipulation | `src/systems/Manipulation.mjs` |
 
 ---
 
@@ -106,7 +106,7 @@ $(\vec{n}_k, d_k)$ :
 
 ---
 
-## 4. Projection perspective (mode bureau, `Renderer.js`)
+## 4. Projection perspective (mode bureau, `Renderer.mjs`)
 
 Caméra : champ vertical $\varphi = 70°$, rapport $a = L/H$ de la fenêtre, plans proche $n = 0{,}01$ m et lointain $f = 200$ m.
 Avec $s = 1 / \tan(\varphi/2)$, la matrice de projection (convention de profondeur $[0, 1]$ de WebGPU) est :
@@ -140,7 +140,7 @@ sans aucun dessin WebGL).
 
 ---
 
-## 6. Raycasting : savoir ce que l'utilisateur vise (`Interaction.js`)
+## 6. Raycasting : savoir ce que l'utilisateur vise (`Interaction.mjs`)
 
 ### 6.1 Le rayon
 
@@ -264,7 +264,7 @@ La position de la tête est ainsi un **point fixe** de la transformation : seul 
 
 ---
 
-## 9. Joysticks et vibrations (`Manipulation.js`, `XRManager.js`)
+## 9. Joysticks et vibrations (`Manipulation.mjs`, `XRManager.mjs`)
 
 Le joystick donne $(x, y) \in [-1, 1]^2$ (axes 2 et 3 du gamepad `xr-standard`).
 
@@ -323,7 +323,7 @@ $\cos \Omega = q_0 \cdot q_1$ :
 Contrairement à une interpolation des angles d'Euler, la vitesse angulaire est constante et il n'y a pas de blocage de cardan.
 
 **Battement du cœur** (`BodyScene`, `XrayBody`) : l'échelle suit $\sigma(t) = 1 + 0{,}05 \, b(t)$, où $b$ est la fonction
-de battement de Yessmine (`tissuePulse.js`). Avec la phase $\phi = \operatorname{frac}(t \cdot \text{bpm} / 60)$ et une gaussienne
+de battement de Yessmine (`tissuePulse.mjs`). Avec la phase $\phi = \operatorname{frac}(t \cdot \text{bpm} / 60)$ et une gaussienne
 $g(c, w) = e^{-((\phi - c)/w)^2}$ :
 
 ```math
@@ -334,7 +334,7 @@ Les deux pics reproduisent les deux bruits du cœur : la contraction des ventric
 
 ---
 
-## 11. Niveau des poumons : zones de dépôt et couleur du sang (`LungsLevel.js`)
+## 11. Niveau des poumons : zones de dépôt et couleur du sang (`LungsLevel.mjs`)
 
 Soit $c$ le centre de l'alvéole, $R_a = 0{,}9$ m son rayon, et $R_c = 1{,}35$ m le rayon de l'arc du capillaire (même centre).
 Une molécule lâchée en $p$ est dans :
