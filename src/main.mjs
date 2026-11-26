@@ -112,12 +112,21 @@ updateProgressSummary();
 const fx = new Effects( { scene: engine.scene, camera: engine.camera } ).attach();
 engine.onUpdate( ( dt ) => fx.update( dt ) );
 let levelsContent = null;
-const voice = new Voice().attach( async ( id ) => {
+const levelContent = async ( id ) => {
 
 	levelsContent ??= await ( await fetch( `${import.meta.env.BASE_URL}assets/content/levels.json` ) ).json();
 	return levelsContent.levels.find( ( l ) => l.id === id );
 
-} );
+};
+const voice = new Voice().attach( levelContent );
+
+/** Relit l'introduction du niveau affiché (l'accueil n'a pas de texte dans levels.json). */
+function readCurrentLevel() {
+
+	levelContent( activeAudioLevel ).then( ( content ) => voice.readLevel( content ) )
+		.catch( ( error ) => console.warn( 'Voix indisponible :', error.message ) );
+
+}
 
 // Semaine 3 (Melek) : tableau de bord des résultats locaux.
 // Monté après restoreProgress() ; la PWA de Zaineb est inchangée.
@@ -166,12 +175,20 @@ xr.addEventListener( 'sessionstart', () => {
 	desktop.setEnabled( false );
 	home.hidden = true;
 
+	// Son en VR : débloqué, ambiance du niveau en cours, puis lecture de son introduction (touche V = muet).
+	// L'écouteur audio suit déjà la caméra, que XRPresenter place sur la tête à chaque image.
+	audio.unlock();
+	audio.setOrgan( activeAudioLevel );
+	readCurrentLevel();
+
 } );
 
 xr.addEventListener( 'sessionend', () => {
 
 	desktop.setEnabled( true );
 	home.hidden = false;
+	audio.setOrgan( null );
+	voice.stop();
 
 } );
 
