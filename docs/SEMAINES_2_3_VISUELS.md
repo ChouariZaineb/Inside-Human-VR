@@ -5,15 +5,15 @@ Branches : `feature/visuels-poumons-cerveau` (semaine 2), `feature/finitions-vid
 ## Livrables
 | Fichier | Rôle |
 |---|---|
-| `src/shaders/breathing.js` | Respiration en TSL (`breath`, `breathRate`, `breathJS`, `lungMaterial`, `bronchiMaterial`) |
-| `src/shaders/bloodFlow.js` (modifié) | `oxygenTo()` / `updateOxygen()` : le sang passe du bleu au rouge ; option `outside` pour les tubes vus de l'extérieur |
-| `src/shaders/neuronSignal.js` | Impulsion nerveuse (`axonMaterial`, `somaMaterial`, `SignalChain`, `neuronGlow`) |
-| `src/systems/LungsModel.js` | `createLungs()` : poumons, bronches, circulation pulmonaire bleu → rouge |
-| `src/systems/BrainModel.js` | `createBrain()`, `createNeuronNetwork(points)` |
-| `src/core/AudioManager.js` | Sons synthétisés et spatialisés, réactifs au bus d'événements |
-| `src/systems/Effects.js` | Brouillard, lumières par organe, effets de réussite et d'erreur |
-| `src/core/Voice.js` | Lecture à voix haute (Web Speech API, fr-FR) |
-| `sandbox/organs.html` + `organs.js` | Page de test de tout ce qui précède |
+| `src/shaders/breathing.mjs` | Respiration en TSL (`breath`, `breathRate`, `breathJS`, `lungMaterial`, `bronchiMaterial`) |
+| `src/shaders/bloodFlow.mjs` (modifié) | `oxygenTo()` / `updateOxygen()` : le sang passe du bleu au rouge ; option `outside` pour les tubes vus de l'extérieur |
+| `src/shaders/neuronSignal.mjs` | Impulsion nerveuse (`axonMaterial`, `somaMaterial`, `SignalChain`, `neuronGlow`) |
+| `src/systems/LungsModel.mjs` | `createLungs()` : poumons, bronches, circulation pulmonaire bleu → rouge |
+| `src/systems/BrainModel.mjs` | `createBrain()`, `createNeuronNetwork(points)` |
+| `src/core/AudioManager.mjs` | Sons synthétisés et spatialisés, réactifs au bus d'événements |
+| `src/systems/Effects.mjs` | Brouillard, lumières par organe, effets de réussite et d'erreur |
+| `src/core/Voice.mjs` | Lecture à voix haute (Web Speech API, fr-FR) |
+| `sandbox/organs.html` + `organs.mjs` | Page de test de tout ce qui précède |
 | `docs/marketing/` | Script vidéo, affiche, dossier de presse |
 | `docs/design-notebook/` | Diagrammes de cas d'utilisation et de classes (Mermaid + PNG) |
 
@@ -24,7 +24,7 @@ Les modèles sont **générés par code** (pas de GLB Blender) : aucun fichier l
 
 ## Intégration (à faire avec Zaineb et Melek — fichiers qui ne sont pas les miens)
 
-**main.js** (après la création du moteur) :
+**main.mjs** (après la création du moteur) :
 ```js
 import { AudioManager } from './core/AudioManager.js';
 import { Effects } from './systems/Effects.js';

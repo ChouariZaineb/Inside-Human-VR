@@ -21,17 +21,17 @@ ou en mode bureau (souris et clavier).
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ PRÉSENTATION   index.html, styles.css, UIPanel.js (panneaux 3D)        │
+│ PRÉSENTATION   index.html, styles.css, UIPanel.mjs (panneaux 3D)        │
 ├──────────────────────────────────────────────────────────────────────┤
-│ SCÈNES ET NIVEAUX   BodyScene.js, TestScene.js, BaseLevel.js, HeartLevel.js │
+│ SCÈNES ET NIVEAUX   BodyScene.mjs, TestScene.mjs, BaseLevel.mjs, HeartLevel.mjs │
 ├──────────────────────────────────────────────────────────────────────┤
-│ LOGIQUE DE JEU   GameState.js (machine à états, score), EventBus.js    │
+│ LOGIQUE DE JEU   GameState.mjs (machine à états, score), EventBus.mjs    │
 ├──────────────────────────────────────────────────────────────────────┤
-│ SYSTÈMES   Interaction.js, Teleport.js, Particles.js                   │
-│ VISUELS    XrayBody.js, ProceduralHeart.js, HeartAtlas.js, shaders TSL │
+│ SYSTÈMES   Interaction.mjs, Teleport.mjs, Particles.mjs                   │
+│ VISUELS    XrayBody.mjs, ProceduralHeart.mjs, HeartAtlas.mjs, shaders TSL │
 ├──────────────────────────────────────────────────────────────────────┤
-│ MOTEUR   Engine.js, Renderer.js, XRManager.js, XRPresenter.js,         │
-│          DesktopControls.js, LevelManager.js                           │
+│ MOTEUR   Engine.mjs, Renderer.mjs, XRManager.mjs, XRPresenter.mjs,         │
+│          DesktopControls.mjs, LevelManager.mjs                           │
 ├──────────────────────────────────────────────────────────────────────┤
 │ PLATEFORME   Navigateur · WebGPU · WebXR Device API · Service Worker    │
 └──────────────────────────────────────────────────────────────────────┘
@@ -40,7 +40,7 @@ ou en mode bureau (souris et clavier).
 Chaque couche n'utilise que les couches situées en dessous. Une scène ou un niveau ne crée jamais
 de renderer ni de session VR : il reçoit `engine`, `interaction` et `teleport` et s'en sert.
 
-## 3. Démarrage de l'application (`src/main.js`)
+## 3. Démarrage de l'application (`src/main.mjs`)
 
 1. `Engine` crée la scène, la caméra et le `WebGPURenderer`, puis attend `renderer.init()`.
 2. `XRManager` vérifie en parallèle si la VR est disponible (au maximum 3 secondes d'attente) et prépare les manettes.
@@ -97,19 +97,19 @@ copie de l'image : texImage2D(canvas WebGPU) + blitFramebuffer → XRWebGLLayer 
 
 | Patron | Où | Pourquoi |
 |---|---|---|
-| Façade | `Engine.js` | Une seule API simple cache le renderer, la scène et la boucle |
-| Strategy | `Interaction.js` | Même code de sélection et de saisie avec deux entrées : manette VR ou souris |
+| Façade | `Engine.mjs` | Une seule API simple cache le renderer, la scène et la boucle |
+| Strategy | `Interaction.mjs` | Même code de sélection et de saisie avec deux entrées : manette VR ou souris |
 | Observer | `EventDispatcher`, `EventBus`, `onUpdate` | Les modules réagissent sans dépendre les uns des autres |
-| Template Method | `BaseLevel.js` | Déroulé commun des niveaux (`load`, `start`, `update`, `dispose`) |
-| State | `GameState.js` | Phases d'un niveau : arrivée, exploration, mission, résultat, terminé |
+| Template Method | `BaseLevel.mjs` | Déroulé commun des niveaux (`load`, `start`, `update`, `dispose`) |
+| State | `GameState.mjs` | Phases d'un niveau : arrivée, exploration, mission, résultat, terminé |
 
 ## 8. Progressive Web App
 
 | Élément | Fichier | Rôle |
 |---|---|---|
 | Manifeste | `public/manifest.webmanifest` | Nom, icônes, couleurs, `display: standalone` : l'application est installable |
-| Service Worker | `public/sw.js` | Stratégie « réseau d'abord, cache en secours » : hors ligne, tout est servi depuis le cache |
-| Enregistrement | `src/pwa.js` | `navigator.serviceWorker.register('./sw.js')`, puis envoi des fichiers déjà chargés au cache |
+| Service Worker | `public/sw.mjs` | Stratégie « réseau d'abord, cache en secours » : hors ligne, tout est servi depuis le cache |
+| Enregistrement | `src/pwa.mjs` | `navigator.serviceWorker.register('./sw.js')`, puis envoi des fichiers déjà chargés au cache |
 | Icônes | `public/icons/` | 192 et 512 px, version « maskable », icône Apple |
 
 Vérification : Chrome → F12 → onglet **Application** → *Manifest* et *Service Workers* ; cocher *Offline* puis recharger.

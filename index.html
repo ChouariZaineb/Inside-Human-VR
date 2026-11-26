@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#081325" />
   <meta name="description" content="Inside Human VR, trois missions immersives pour comprendre le cœur, les poumons et le cerveau, sans casque obligatoire." />
   <title>Inside Human VR — Voyage dans le corps humain</title>
-  <!-- Progressive Web App : manifeste et icônes (le Service Worker est enregistré par src/pwa.js) -->
+  <!-- Progressive Web App : manifeste et icônes (le Service Worker est enregistré par src/pwa.mjs) -->
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/png" href="./icons/icon-192.png" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -22,7 +22,7 @@
         <span class="brand-mark" aria-hidden="true">✦</span>
         <span class="brand-name">INSIDE HUMAN <strong>VR</strong></span>
         <span class="brand-tag">EXPÉRIENCE PÉDAGOGIQUE</span>
-        <!-- PWA : bouton d'installation, affiché seulement quand le navigateur le propose (src/pwa.js) -->
+        <!-- PWA : bouton d'installation, affiché seulement quand le navigateur le propose (src/pwa.mjs) -->
         <button id="btn-install" class="install-button" type="button" hidden>Installer l'application</button>
       </header>
 
@@ -82,7 +82,7 @@
   </main>
 
   <div id="reticle" hidden aria-hidden="true"></div>
-  <!-- PWA : état de la connexion, toujours visible (mis à jour par src/pwa.js) -->
+  <!-- PWA : état de la connexion, toujours visible (mis à jour par src/pwa.mjs) -->
   <div id="net-badge" class="net-badge" data-state="online" role="status" aria-live="polite">
     <span class="net-dot" aria-hidden="true"></span><span id="net-label">En ligne</span>
   </div>
@@ -97,6 +97,6 @@
   }
 }
 </script>
-<script type="module" src="./src/main.js"></script>
+<script type="module" src="./src/main.mjs"></script>
 </body>
 </html>
