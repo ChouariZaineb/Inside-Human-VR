@@ -6,8 +6,8 @@ Le projet a deux niveaux de tests :
 
 | Niveau | Outil | Commande | Ce qui est testé |
 |---|---|---|---|
-| Tests unitaires | `node --test` (intégré à Node.js) | `npm test` | La logique de progression : score, déblocage des niveaux, reprise du parcours (`tests/progression.test.mjs`, Melek) |
-| **Tests de bout en bout** | **Playwright** + **iwer** | `npm run test:e2e` | L'application complète dans un vrai Chrome : WebGPU, VR simulée, interactions, mission complète, PWA hors ligne (`tests/e2e/`, Zaineb) |
+| Tests unitaires | `node --test` (intégré à Node.js) | `npm test` | La logique de progression : score, déblocage des niveaux, reprise du parcours (`src/scripts/tests/progression.test.mjs`, Melek) |
+| **Tests de bout en bout** | **Playwright** + **iwer** | `npm run test:e2e` | L'application complète dans un vrai Chrome : WebGPU, VR simulée, interactions, mission complète, PWA hors ligne (`src/scripts/tests/e2e/`, Zaineb) |
 
 ---
 

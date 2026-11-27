@@ -5,22 +5,22 @@ Branches : `feature/visuels-poumons-cerveau` (semaine 2), `feature/finitions-vid
 ## Livrables
 | Fichier | Rôle |
 |---|---|
-| `src/shaders/breathing.mjs` | Respiration en TSL (`breath`, `breathRate`, `breathJS`, `lungMaterial`, `bronchiMaterial`) |
-| `src/shaders/bloodFlow.mjs` (modifié) | `oxygenTo()` / `updateOxygen()` : le sang passe du bleu au rouge ; option `outside` pour les tubes vus de l'extérieur |
-| `src/shaders/neuronSignal.mjs` | Impulsion nerveuse (`axonMaterial`, `somaMaterial`, `SignalChain`, `neuronGlow`) |
-| `src/systems/LungsModel.mjs` | `createLungs()` : poumons, bronches, circulation pulmonaire bleu → rouge |
-| `src/systems/BrainModel.mjs` | `createBrain()`, `createNeuronNetwork(points)` |
-| `src/core/AudioManager.mjs` | Sons synthétisés et spatialisés, réactifs au bus d'événements |
-| `src/systems/Effects.mjs` | Brouillard, lumières par organe, effets de réussite et d'erreur |
-| `src/core/Voice.mjs` | Lecture à voix haute (Web Speech API, fr-FR) |
-| `sandbox/organs.html` + `organs.mjs` | Page de test de tout ce qui précède |
+| `src/scripts/shaders/breathing.mjs` | Respiration en TSL (`breath`, `breathRate`, `breathJS`, `lungMaterial`, `bronchiMaterial`) |
+| `src/scripts/shaders/bloodFlow.mjs` (modifié) | `oxygenTo()` / `updateOxygen()` : le sang passe du bleu au rouge ; option `outside` pour les tubes vus de l'extérieur |
+| `src/scripts/shaders/neuronSignal.mjs` | Impulsion nerveuse (`axonMaterial`, `somaMaterial`, `SignalChain`, `neuronGlow`) |
+| `src/scripts/systems/LungsModel.mjs` | `createLungs()` : poumons, bronches, circulation pulmonaire bleu → rouge |
+| `src/scripts/systems/BrainModel.mjs` | `createBrain()`, `createNeuronNetwork(points)` |
+| `src/scripts/core/AudioManager.mjs` | Sons synthétisés et spatialisés, réactifs au bus d'événements |
+| `src/scripts/systems/Effects.mjs` | Brouillard, lumières par organe, effets de réussite et d'erreur |
+| `src/scripts/core/Voice.mjs` | Lecture à voix haute (Web Speech API, fr-FR) |
+| `src/pages/organs.html` + `organs.mjs` | Page de test de tout ce qui précède |
 | `docs/marketing/` | Script vidéo, affiche, dossier de presse |
 | `docs/design-notebook/` | Diagrammes de cas d'utilisation et de classes (Mermaid + PNG) |
 
 Les modèles sont **générés par code** (pas de GLB Blender) : aucun fichier lourd, aucune licence à gérer, et les shaders peuvent animer directement la géométrie.
 
 ## Tester
-`npm run dev`, puis ouvrir `/sandbox/organs.html` (ajouter `?webgl` si WebGPU est indisponible, `?o=brain` pour le cerveau). Boutons : Poumons, Cerveau, Impulsion nerveuse, Réussite, Erreur, Lire à voix haute, Activer le son (un clic est nécessaire pour autoriser le son), Muet (touche M).
+`npm run dev`, puis ouvrir `/pages/organs.html` (ajouter `?webgl` si WebGPU est indisponible, `?o=brain` pour le cerveau). Boutons : Poumons, Cerveau, Impulsion nerveuse, Réussite, Erreur, Lire à voix haute, Activer le son (un clic est nécessaire pour autoriser le son), Muet (touche M).
 
 ## Intégration (à faire avec Zaineb et Melek — fichiers qui ne sont pas les miens)
 
@@ -32,7 +32,7 @@ import { Voice } from './core/Voice.js';
 const audio = new AudioManager().attach(engine);
 const fx = new Effects({ scene: engine.scene, camera: engine.camera }).attach();
 engine.onUpdate((dt) => fx.update(dt));
-const voice = new Voice().attach(async (id) => (await (await fetch(`${import.meta.env.BASE_URL}assets/content/levels.json`)).json()).levels.find((l) => l.id === id));
+const voice = new Voice().attach(async (id) => (await (await fetch(`${import.meta.env.BASE_URL}assets/missions/missions.json`)).json()).levels.find((l) => l.id === id));
 ```
 (`attach` du son et de la voix écoutent `levelStarted`, `missionSuccess`, `missionError`, `levelUnlocked`.)
 

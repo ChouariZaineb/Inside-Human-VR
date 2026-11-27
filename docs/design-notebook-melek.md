@@ -104,13 +104,13 @@ stateDiagram-v2
 
 | Élément du diagramme | Fichier |
 |---|---|
-| États, score, résultats et transitions | `src/data/GameState.mjs` |
-| Distribution des événements | `src/systems/EventBus.mjs` |
-| Logique commune et interactions | `src/levels/BaseLevel.mjs` |
-| Mission du cœur | `src/levels/HeartLevel.mjs` |
-| Enchaînement des niveaux | `src/core/LevelManager.mjs` |
-| Sauvegarde locale | `src/data/Storage.mjs` |
-| Agrégation et affichage des résultats | `src/systems/Dashboard.mjs` |
+| États, score, résultats et transitions | `src/scripts/data/GameState.mjs` |
+| Distribution des événements | `src/scripts/systems/EventBus.mjs` |
+| Logique commune et interactions | `src/scripts/levels/BaseLevel.mjs` |
+| Mission du cœur | `src/scripts/levels/HeartLevel.mjs` |
+| Enchaînement des niveaux | `src/scripts/core/LevelManager.mjs` |
+| Sauvegarde locale | `src/scripts/data/Storage.mjs` |
+| Agrégation et affichage des résultats | `src/scripts/systems/Dashboard.mjs` |
 
 Ces diagrammes peuvent être insérés dans le Design Notebook de l'équipe, ou exportés
 en image depuis un outil Mermaid si le professeur demande un fichier image.

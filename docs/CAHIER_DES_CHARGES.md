@@ -239,24 +239,24 @@ L’application est organisée en couches. Chaque couche n’utilise que celle q
 | **Logique de jeu** | Niveaux (BaseLevel → cœur, poumons, cerveau) · GameState (machine à états, score) · Bus d’événements |
 | **Systèmes**       | Téléportation · Interaction (raycasting) · Particules (InstancedMesh + TSL) · Audio spatialisé       |
 | **Moteur**         | Three.js \`WebGPURenderer\` · Shaders TSL compilés en WGSL · Entrées WebXR ou souris/clavier         |
-| **Données**        | levels.json · Modèles GLB (Draco) · IndexedDB · Service Worker (cache hors ligne)                    |
+| **Données**        | missions.json · Modèles GLB (Draco) · IndexedDB · Service Worker (cache hors ligne)                    |
 | **Plateforme**     | Navigateur Chrome ou Edge sur PC · WebGPU (repli WebGL 2) · Immersive Web Emulator                   |
 
 ## 4.4 Organisation du code
 
-| **Fichier ou dossier** | **Contenu**                                                    |
-|------------------------|----------------------------------------------------------------|
-| index.html             | Structure de la PWA, écran d’accueil, boutons d’entrée         |
-| src/main.mjs            | Initialisation du moteur et de la boucle de rendu              |
-| src/core/              | Renderer.mjs, XRManager.mjs, DesktopControls.mjs, AudioManager.mjs |
-| src/levels/            | BaseLevel.mjs, HeartLevel.mjs, LungsLevel.mjs, BrainLevel.mjs      |
-| src/systems/           | Teleport.mjs, Interaction.mjs, Particles.mjs, UIPanel.mjs          |
-| src/shaders/           | Effets TSL : bloodFlow.mjs, tissuePulse.mjs, neuronSignal.mjs     |
-| src/data/              | GameState.mjs, Storage.mjs (IndexedDB)                           |
-| public/assets/models/  | heart.glb, lungs.glb, brain.glb, vessel.glb                    |
-| public/assets/content/ | levels.json : missions, questions et explications en français  |
-| public/assets/audio/   | Sons d’ambiance sous licence CC0                               |
-| manifest.json, sw.mjs   | Installation et fonctionnement hors ligne                      |
+| **Fichier ou dossier**               | **Contenu**                                                        |
+|--------------------------------------|--------------------------------------------------------------------|
+| src/index.html                       | Structure de la PWA, écran d’accueil, boutons d’entrée             |
+| src/scripts/main.mjs                 | Initialisation du moteur et de la boucle de rendu                  |
+| src/scripts/core/                    | Renderer.mjs, XRManager.mjs, DesktopControls.mjs, AudioManager.mjs |
+| src/scripts/levels/                  | BaseLevel.mjs, HeartLevel.mjs, LungsLevel.mjs, BrainLevel.mjs      |
+| src/scripts/systems/                 | Teleport.mjs, Interaction.mjs, Particles.mjs, UIPanel.mjs          |
+| src/scripts/shaders/                 | Effets TSL : bloodFlow.mjs, tissuePulse.mjs, neuronSignal.mjs      |
+| src/scripts/data/                    | GameState.mjs, Storage.mjs (IndexedDB)                             |
+| src/assets/models/                   | heart.glb, lungs.glb, brain.glb, vessel.glb                        |
+| src/assets/missions/                 | missions.json : missions, questions et explications en français    |
+| src/assets/audio/                    | Sons d’ambiance sous licence CC0                                   |
+| src/manifest.webmanifest, src/sw.mjs | Installation et fonctionnement hors ligne                          |
 
 ## 4.5 Contraintes techniques
 
@@ -422,7 +422,7 @@ La marge d’environ 40 % couvre les aléas, l’apprentissage de WebGPU et de T
 | **Modèles 3D trop lourds**                               | Moyenne         | Élevé      | Simplification dans Blender, compression Draco, un seul organe chargé à la fois        |
 | **Absence de modèle libre adapté (vaisseau, alvéole)**   | Moyenne         | Moyen      | Construction des décors avec des formes simples (tubes, sphères) et des shaders        |
 | **Retard sur un niveau**                                 | Moyenne         | Moyen      | Niveaux indépendants ; le niveau 3 peut être simplifié sans bloquer les autres         |
-| **Erreur scientifique dans les contenus**                | Faible          | Élevé      | Relecture par un enseignant de biologie ; sources citées dans levels.json              |
+| **Erreur scientifique dans les contenus**                | Faible          | Élevé      | Relecture par un enseignant de biologie ; sources citées dans missions.json              |
 | **Panne réseau ou d’émulateur le jour de la soutenance** | Faible          | Élevé      | Version locale prête, mode bureau, vidéo de démonstration en dernier recours           |
 | **Mal des transports**                                   | Faible          | Moyen      | Téléportation uniquement, aucun mouvement de caméra imposé                             |
 
@@ -455,7 +455,7 @@ La marge d’environ 40 % couvre les aléas, l’apprentissage de WebGPU et de T
 | **Observer**           | Bus d’événements : les modules réagissent à missionSuccess ou levelUnlocked sans dépendre les uns des autres |
 | **Singleton**          | Un seul GameState, un seul AudioManager, un seul Storage                                                     |
 | **Strategy**           | Le même code d’interaction fonctionne avec deux stratégies d’entrée : manette VR ou souris                   |
-| **Data-driven design** | Missions, questions et textes sont dans levels.json, séparés du code                                         |
+| **Data-driven design** | Missions, questions et textes sont dans missions.json, séparés du code                                         |
 
 # 11 Directives de développement
 
@@ -467,7 +467,7 @@ La marge d’environ 40 % couvre les aléas, l’apprentissage de WebGPU et de T
 
 - Les fonctions publiques sont documentées en JSDoc (paramètres, valeur de retour).
 
-- Le contenu pédagogique de levels.json cite ses sources scientifiques.
+- Le contenu pédagogique de missions.json cite ses sources scientifiques.
 
 - Les licences de chaque modèle 3D et de chaque son sont listées dans CREDITS.md.
 

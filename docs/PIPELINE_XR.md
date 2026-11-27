@@ -21,12 +21,12 @@ flowchart LR
 
 | Étape | Fichier |
 |---|---|
-| Session, manettes | `src/core/XRManager.mjs` |
-| Poses, rendu stéréo, copie | `src/core/XRPresenter.mjs` |
-| Rendu WebGPU | `src/core/Renderer.mjs` |
-| Raycasting, saisie | `src/systems/Interaction.mjs` |
-| Téléportation | `src/systems/Teleport.mjs` |
-| Rotation sur soi, manipulation | `src/systems/Manipulation.mjs` |
+| Session, manettes | `src/scripts/core/XRManager.mjs` |
+| Poses, rendu stéréo, copie | `src/scripts/core/XRPresenter.mjs` |
+| Rendu WebGPU | `src/scripts/core/Renderer.mjs` |
+| Raycasting, saisie | `src/scripts/systems/Interaction.mjs` |
+| Téléportation | `src/scripts/systems/Teleport.mjs` |
+| Rotation sur soi, manipulation | `src/scripts/systems/Manipulation.mjs` |
 
 ---
 

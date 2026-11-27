@@ -14,7 +14,7 @@ Voyage immersif à l'intérieur du corps humain : une application éducative en 
 
 ## 1. Installation et lancement
 
-Prérequis : Node.js 20 ou plus, Chrome ou Edge récent.
+Prérequis : Node.js 26.13.1 LTS ou plus (version indiquée dans `.nvmrc`, utilisée par la CI), Chrome ou Edge récent.
 
 ```powershell
 npm install        # installe Vite et Three.js
@@ -23,7 +23,7 @@ npm run build      # build de production dans dist/
 npm run preview    # teste le build de production en local
 ```
 
-Au démarrage, l'application affiche la **scène du corps humain** (`src/scenes/BodyScene.mjs`) :
+Au démarrage, l'application affiche la **scène du corps humain** (`src/scripts/scenes/BodyScene.mjs`) :
 le corps « radio » avec le cœur qui bat et le sang qui circule, sur lequel on peut se téléporter.
 Ajouter `?test` à l'adresse (`http://localhost:5173/?test`) charge la scène de test du moteur.
 
@@ -63,12 +63,13 @@ accessibles dans la console du navigateur via `window.app` (`app.engine`, `app.t
 
 ```
 npm test                 # tests unitaires (progression, Melek)
-npm run test:e2e         # 11 tests de bout en bout : WebGPU, VR simulée (Meta Quest 3), interactions, PWA hors ligne
+npm run test:e2e         # 13 tests de bout en bout : WebGPU, VR simulée (Meta Quest 3), interactions, PWA hors ligne
 npm run test:e2e:report  # rapport HTML du dernier passage
 ```
 
-Détails : [`docs/TESTS.md`](docs/TESTS.md). Ces tests sont aussi lancés **automatiquement par GitHub Actions** à chaque push
-et à chaque pull request, et chaque fusion dans `main` met l'application en ligne : voir [`docs/CI_CD.md`](docs/CI_CD.md).
+Détails : [`docs/TESTS.md`](docs/TESTS.md). Ces tests sont aussi lancés **automatiquement par GitHub Actions** (workflow unique
+`ci-cd.yml`) à chaque push et à chaque pull request ; sur `main`, l'application est mise en ligne **seulement si tous les tests
+passent** : voir [`docs/CI_CD.md`](docs/CI_CD.md).
 
 ---
 
@@ -86,7 +87,7 @@ et à chaque pull request, et chaque fusion dans `main` met l'application en lig
   WebGPU (`XRGPUBinding`) est encore expérimentale dans Chrome et absente d'Immersive Web Emulator.
   L'image WebGPU est donc seulement **copiée** dans la couche (`texImage2D` + `blitFramebuffer`) : WebGL ne dessine rien.
 - **Interactions** : sélection (gâchette / clic gauche) et **saisie** d'objets (bouton grip / clic droit maintenu).
-- **PWA** : `manifest.webmanifest`, Service Worker `sw.mjs` (fonctionne hors ligne), icônes, enregistrement dans `src/pwa.mjs`
+- **PWA** : `src/manifest.webmanifest`, Service Worker `src/sw.mjs` (fonctionne hors ligne), icônes, enregistrement dans `src/scripts/pwa.mjs`
   (voir `docs/MOTEUR_VR.md`, section 14, et `docs/ARCHITECTURE.md`, section 8).
 
 Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les addons de Three.js importent `'three'` :
@@ -98,59 +99,68 @@ Pour l'équipe : importez toujours `import * as THREE from 'three/webgpu';`. Les
 
 ```
 Inside-Human-VR/
-├── index.html                Page d'accueil (provisoire)                 → Zaineb, puis Melek
-├── styles.css                Styles de la page                           → Zaineb, puis Melek
-├── .github/workflows/        CI (ci.yml) et déploiement GitHub Pages (deploy.yml) → Zaineb
-├── playwright.config.mjs      Configuration des tests de bout en bout     → Zaineb
-├── vite.config.mjs            Configuration Vite (alias three/webgpu, HTTPS local) → Zaineb, Yessmine
-├── README.md                 Présentation, API du moteur, journal des tâches
-├── CREDITS.md, ATTRIBUTION.md Licences des ressources                    → Yessmine
-├── docs/                     Documentation du projet
-│   ├── ARCHITECTURE.md         Architecture générale                     → Zaineb
-│   ├── MOTEUR_VR.md            Explication du moteur et de la VR         → Zaineb
-│   ├── PIPELINE_XR.md          Formalisation mathématique du moteur      → Zaineb
-│   ├── TESTS.md                Stratégie de tests (unitaires, bout en bout) → Zaineb
-│   ├── CI_CD.md                Intégration et déploiement continus        → Zaineb
-│   ├── GUIDE_GIT.md            Méthode de travail Git de l'équipe        → Zaineb
-│   ├── VISUELS.md              Shaders, particules, modèles procéduraux  → Yessmine
-│   └── CAHIER_DES_CHARGES.md   Cahier des charges                        → Yessmine
-├── sandbox/                  Pages d'essai des visuels (xray, atlas)     → Yessmine
-├── src/
-│   ├── main.mjs               Assemble le moteur, les systèmes et la scène → Zaineb
-│   ├── pwa.mjs                Enregistrement du Service Worker (PWA)      → Zaineb
-│   ├── core/                 Moteur                                      → Zaineb
-│   │   ├── Engine.mjs           API centrale (scene, camera, player, onUpdate, isVR)
-│   │   ├── Renderer.mjs         WebGPURenderer, scène, caméra, lumières, rendu stéréo
-│   │   ├── XRManager.mjs        Session immersive-vr (API WebXR Device), manettes, rayons
-│   │   ├── XRPresenter.mjs      Rendu WebGPU des deux yeux et copie vers le casque
-│   │   ├── DesktopControls.mjs  Mode bureau (PointerLockControls, réticule)
-│   │   └── LevelManager.mjs     Chargement des niveaux et passage de l'un à l'autre
-│   ├── scenes/
-│   │   └── BodyScene.mjs        Scène de départ : le corps humain en VR   → Zaineb
-│   ├── debug/
-│   │   └── TestScene.mjs        Scène de test du moteur (?test)           → Zaineb
-│   ├── systems/
-│   │   ├── Interaction.mjs      Pointage et sélection (manette ou souris) → Zaineb
-│   │   ├── Manipulation.mjs     Joysticks : snap turn, rotation et distance de l'objet tenu → Zaineb
-│   │   ├── Teleport.mjs         Points de téléportation, fondu au noir    → Zaineb
-│   │   ├── XrayBody.mjs         Corps humain « radio » (modèle 3D)        → Yessmine
-│   │   ├── ProceduralHeart.mjs  Cœur anatomique généré par code           → Yessmine
-│   │   ├── HeartAtlas.mjs       Torse, cœur et schéma de la circulation   → Yessmine
-│   │   ├── Particles.mjs        Globules rouges (InstancedMesh)           → Yessmine
-│   │   ├── EventBus.mjs         Bus d'événements                          → Melek
-│   │   └── UIPanel.mjs          Panneaux 3D flottants                     → Melek
-│   ├── shaders/              Shaders TSL (bloodFlow, tissuePulse)        → Yessmine
-│   ├── levels/               BaseLevel, HeartLevel → Melek ; LungsLevel → Zaineb
-│   └── data/                 GameState (machine à états, score)          → Melek
-└── public/
-    ├── manifest.webmanifest  Manifeste de la PWA (nom, icônes, affichage) → Zaineb
-    ├── sw.mjs                 Service Worker : cache et hors ligne        → Zaineb
-    ├── icons/                Icônes de l'application                     → Zaineb
-    └── assets/
-    ├── models/               Modèles GLB (si besoin)                     → Yessmine
-    ├── audio/                Sons (CC0)                                  → Yessmine
-    └── content/              levels.json (textes, missions)              → Melek
+├── .github/workflows/
+│   └── ci-cd.yml               CI/CD : build → tests e2e → déploiement GitHub Pages → Zaineb
+├── docs/                       Documentation du projet
+│   ├── ARCHITECTURE.md           Architecture générale et arborescence     → Zaineb
+│   ├── MOTEUR_VR.md              Explication du moteur et de la VR         → Zaineb
+│   ├── PIPELINE_XR.md            Formalisation mathématique du moteur      → Zaineb
+│   ├── TESTS.md                  Stratégie de tests (unitaires, bout en bout) → Zaineb
+│   ├── CI_CD.md                  Intégration et déploiement continus        → Zaineb
+│   ├── GUIDE_GIT.md              Méthode de travail Git de l'équipe        → Zaineb
+│   ├── VISUELS.md                Shaders, particules, modèles procéduraux  → Yessmine
+│   └── CAHIER_DES_CHARGES.md     Cahier des charges                        → Yessmine
+├── tools/                      Outils de développement (non publiés sur le site)
+│   ├── blender/                  Script Blender et source .blend des modèles biologiques
+│   ├── migrate-to-mjs.mjs        Passage de tous les fichiers JavaScript en .mjs
+│   └── restructure-src.mjs       Passage à l'arborescence src/ actuelle
+├── src/                        Tout le code de l'application (racine de Vite)
+│   ├── index.html                Page d'accueil                            → Zaineb, puis Melek
+│   ├── manifest.webmanifest      Manifeste de la PWA (nom, icônes, affichage) → Zaineb
+│   ├── sw.mjs                    Service Worker : cache et hors ligne      → Zaineb
+│   ├── assets/                   Fichiers servis tels quels (ni hachés, ni transformés)
+│   │   ├── models/               Modèles GLB                               → Yessmine
+│   │   │   └── draco/            Décodeur Draco (fichiers tiers de Three.js)
+│   │   ├── missions/
+│   │   │   └── missions.json     Textes, explications et missions de chaque organe → Melek
+│   │   ├── icons/                Icônes de l'application                   → Zaineb
+│   │   └── audio/                Sons (CC0)                                → Yessmine
+│   ├── pages/                    Pages d'essai : atlas, biologie, body, organs, xray → Yessmine
+│   ├── styles/
+│   │   └── styles.css            Styles de la page d'accueil               → Zaineb, puis Melek
+│   └── scripts/                  Tout le JavaScript de l'application (.mjs)
+│       ├── main.mjs              Assemble le moteur, les systèmes et la scène → Zaineb
+│       ├── pwa.mjs               Enregistrement du Service Worker (PWA)    → Zaineb
+│       ├── core/                 Moteur                                    → Zaineb
+│       │   ├── Engine.mjs          API centrale (scene, camera, player, onUpdate, isVR)
+│       │   ├── Renderer.mjs        WebGPURenderer, scène, caméra, lumières, rendu stéréo
+│       │   ├── XRManager.mjs       Session immersive-vr (API WebXR Device), manettes, rayons
+│       │   ├── XRPresenter.mjs     Rendu WebGPU des deux yeux et copie vers le casque
+│       │   ├── DesktopControls.mjs Mode bureau (PointerLockControls, réticule)
+│       │   ├── LevelManager.mjs    Chargement des niveaux et passage de l'un à l'autre
+│       │   ├── AudioManager.mjs    Sons (Web Audio)                        → Yessmine
+│       │   └── Voice.mjs           Lecture à voix haute des textes         → Yessmine
+│       ├── scenes/
+│       │   └── BodyScene.mjs       Scène de départ : le corps humain en VR → Zaineb
+│       ├── debug/
+│       │   └── TestScene.mjs       Scène de test du moteur (?test)         → Zaineb
+│       ├── systems/              Interaction, Manipulation, Teleport, XrayBody, RealBody, HeartAtlas,
+│       │                         Particles, EventBus, UIPanel, Dashboard… → Zaineb, Yessmine, Melek
+│       ├── shaders/              Shaders TSL (bloodFlow, tissuePulse, breathing, neuronSignal) → Yessmine
+│       ├── levels/               BaseLevel, HeartLevel, BrainLevel → Melek ; LungsLevel → Zaineb
+│       ├── data/                 GameState (machine à états, score), Storage (IndexedDB) → Melek
+│       ├── pages/                Scripts des pages d'essai de src/pages/   → Yessmine
+│       └── tests/                Tests unitaires (*.test.mjs, Melek) et de bout en bout (e2e/, Zaineb)
+├── README.md, CREDITS.md, ATTRIBUTION.md  Présentation, licences des ressources
+├── package.json, package-lock.json        Dépendances et commandes npm
+├── vite.config.mjs             Configuration Vite (root src, CDN Three.js, fichiers statiques, HTTPS local) → Zaineb, Yessmine
+├── playwright.config.mjs       Configuration des tests de bout en bout     → Zaineb
+└── .nvmrc, .gitignore, .gitattributes
 ```
+
+Les fichiers de configuration restent à la racine : npm, Vite et Playwright les cherchent à cet endroit.
+`tools/` reste aussi à la racine : ce sont des outils de développement, ils ne doivent pas être publiés sur le site.
+Détails : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), section « Arborescence du projet ».
 
 ---
 
@@ -309,3 +319,4 @@ Sprint 1 : du 4 au 8 novembre 2026 · Sprint 2 : du 9 au 15 novembre 2026.
 | 2026-11-12 | Chouari Zaineb | `feature/pwa-badge` | PWA visible : badge de connexion (« En ligne » / « Hors ligne · mode cache »), bouton « Installer l'application » (`beforeinstallprompt`), test automatique du badge ; section PWA rétablie dans `MOTEUR_VR.md` | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/ci-cd` | Intégration continue (GitHub Actions, `ci.yml`) : installation, tests unitaires, build et 11 tests de bout en bout à chaque push et pull request | Fait |
 | 2026-11-12 | Chouari Zaineb | `feature/ci-cd` | Déploiement continu (`deploy.yml`) : publication automatique sur GitHub Pages (HTTPS) à chaque fusion dans `main` ; `docs/CI_CD.md` ; badges et lien de démo | Fait |
+| 2026-11-28 | Chouari Zaineb | `feature/restructuration-src` | Arborescence demandée par le superviseur : tout le code dans `src/` (`assets/`, `scripts/`, `pages/`, `styles/`), suppression de `public/`, `sandbox/` et `tests/` (script `tools/restructure-src.mjs`, `git mv`) ; contenu des missions dans `src/assets/missions/missions.json` ; un seul workflow `ci-cd.yml` (build → e2e → déploiement seulement si tous les tests passent), Ubuntu 26.04, Node 26.13.1 LTS ; documentation mise à jour | Fait |

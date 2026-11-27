@@ -18,5 +18,5 @@ Débit : environ 140 mots/minute → ce texte fait ~700 mots (≈ 5 min).
 - Résolution 1920×1080, 30 i/s ; masquer la barre de favoris ; fermer les notifications.
 - Enregistrer la voix à part (Audacity) dans une pièce calme, puis la caler sur l'image ; vérifier que le volume des sons de l'application ne couvre pas la voix.
 - Capturer la scène du casque avec la diffusion (cast) du casque, ou en mode bureau si indisponible.
-- Pour la scène 4, la page `/sandbox/organs.html?o=brain` lance une impulsion toutes les 4 s.
-- Vérifier tous les faits avec `public/assets/content/levels.json` (déjà relu par l'équipe, relecture enseignant à faire).
+- Pour la scène 4, la page `/pages/organs.html?o=brain` lance une impulsion toutes les 4 s.
+- Vérifier tous les faits avec `src/assets/missions/missions.json` (déjà relu par l'équipe, relecture enseignant à faire).

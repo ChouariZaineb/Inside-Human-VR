@@ -10,7 +10,7 @@
 
 ## État de l'application
 
-La **mission principale des poumons** utilise `BloodParticles` (`src/systems/Particles.mjs`) pour animer des globules biconcaves et des plaquettes dans le capillaire, sans changer la logique des transferts. Les modèles O₂/CO₂ sont générés dans `src/levels/LungsLevel.mjs` pour rester sélectionnables en VR. Les niveaux et le score restent identiques.
+La **mission principale des poumons** utilise `BloodParticles` (`src/scripts/systems/Particles.mjs`) pour animer des globules biconcaves et des plaquettes dans le capillaire, sans changer la logique des transferts. Les modèles O₂/CO₂ sont générés dans `src/scripts/levels/LungsLevel.mjs` pour rester sélectionnables en VR. Les niveaux et le score restent identiques.
 
 ## Générer des modèles éditables dans Blender
 
@@ -29,14 +29,14 @@ La **mission principale des poumons** utilise `BloodParticles` (`src/systems/Par
 
 3. Les fichiers créés sont :
 
-   - `public/assets/models/erythrocyte.glb`
-   - `public/assets/models/platelet.glb`
-   - `public/assets/models/oxygen_o2.glb`
-   - `public/assets/models/carbon_dioxide_co2.glb`
+   - `src/assets/models/erythrocyte.glb`
+   - `src/assets/models/platelet.glb`
+   - `src/assets/models/oxygen_o2.glb`
+   - `src/assets/models/carbon_dioxide_co2.glb`
    - `tools/blender/biologie_source.blend` (source rééditable)
 
 4. Ouvrir le `.blend` dans Blender : vérifier la forme, les matériaux, les dimensions et les normales. La source est générée localement à partir du script, sans fichier externe.
-5. Lancer `npm run dev`, puis ouvrir `/sandbox/biologie.html` pour inspecter les quatre GLB. Tester les molécules en tournant la caméra.
+5. Lancer `npm run dev`, puis ouvrir `/pages/biologie.html` pour inspecter les quatre GLB. Tester les molécules en tournant la caméra.
 
 **Important :** ces quatre GLB constituent des modèles de référence créés avec Blender et visibles dans la page de contrôle. La **mission principale** utilise actuellement ses géométries procédurales correspondantes, déjà animées et interactives ; remplacer les instances par des GLB exige une intégration et une validation VR supplémentaires.
 
@@ -44,6 +44,6 @@ La **mission principale des poumons** utilise `BloodParticles` (`src/systems/Par
 
 - `npm test`, `npm run build`, `npm run test:e2e`.
 - Vérifier dans Chrome la mission des poumons en VR simulée : 6 molécules, 100 points sans erreur, aucune gêne au ciblage.
-- Vérifier le contenu de `public/assets/models/` après la génération Blender.
+- Vérifier le contenu de `src/assets/models/` après la génération Blender.
 - Garder les modèles existants du cœur, des poumons, du cerveau et du squelette, avec leurs crédits dans `ATTRIBUTION.md` / `CREDITS.md`.
 - Si l'éditeur modifie un GLB externe existant, respecter sa licence. Les quatre nouveaux modèles générés ici sont créés uniquement avec des géométries basiques.

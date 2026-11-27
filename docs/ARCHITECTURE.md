@@ -20,27 +20,34 @@ ou en mode bureau (souris et clavier).
 ## 2. Les couches de l'application
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ PRÉSENTATION   index.html, styles.css, UIPanel.mjs (panneaux 3D)        │
-├──────────────────────────────────────────────────────────────────────┤
-│ SCÈNES ET NIVEAUX   BodyScene.mjs, TestScene.mjs, BaseLevel.mjs, HeartLevel.mjs │
-├──────────────────────────────────────────────────────────────────────┤
-│ LOGIQUE DE JEU   GameState.mjs (machine à états, score), EventBus.mjs    │
-├──────────────────────────────────────────────────────────────────────┤
-│ SYSTÈMES   Interaction.mjs, Teleport.mjs, Particles.mjs                   │
-│ VISUELS    XrayBody.mjs, ProceduralHeart.mjs, HeartAtlas.mjs, shaders TSL │
-├──────────────────────────────────────────────────────────────────────┤
-│ MOTEUR   Engine.mjs, Renderer.mjs, XRManager.mjs, XRPresenter.mjs,         │
-│          DesktopControls.mjs, LevelManager.mjs                           │
-├──────────────────────────────────────────────────────────────────────┤
-│ PLATEFORME   Navigateur · WebGPU · WebXR Device API · Service Worker    │
-└──────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PRÉSENTATION   src/index.html, src/styles/styles.css,                        │
+│                scripts/systems/UIPanel.mjs (panneaux 3D)                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ SCÈNES ET NIVEAUX   scripts/scenes/BodyScene.mjs, scripts/debug/TestScene.mjs, │
+│                     scripts/levels/ (BaseLevel, HeartLevel, LungsLevel, BrainLevel) │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ LOGIQUE DE JEU   scripts/data/GameState.mjs (machine à états, score),         │
+│                  scripts/systems/EventBus.mjs                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ SYSTÈMES   scripts/systems/ (Interaction, Teleport, Manipulation, Particles) │
+│ VISUELS    scripts/systems/ (XrayBody, RealBody, HeartAtlas), scripts/shaders/ │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ MOTEUR   scripts/core/ (Engine, Renderer, XRManager, XRPresenter,             │
+│          DesktopControls, LevelManager, AudioManager, Voice)                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ DONNÉES  src/assets/ (missions/missions.json, models/*.glb, icons/)          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PLATEFORME   Navigateur · WebGPU · WebXR Device API · Service Worker (src/sw.mjs) │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+Les chemins `scripts/…` sont relatifs à `src/` (par exemple `src/scripts/core/Engine.mjs`).
 
 Chaque couche n'utilise que les couches situées en dessous. Une scène ou un niveau ne crée jamais
 de renderer ni de session VR : il reçoit `engine`, `interaction` et `teleport` et s'en sert.
 
-## 3. Démarrage de l'application (`src/main.mjs`)
+## 3. Démarrage de l'application (`src/scripts/main.mjs`)
 
 1. `Engine` crée la scène, la caméra et le `WebGPURenderer`, puis attend `renderer.init()`.
 2. `XRManager` vérifie en parallèle si la VR est disponible (au maximum 3 secondes d'attente) et prépare les manettes.
@@ -107,10 +114,10 @@ copie de l'image : texImage2D(canvas WebGPU) + blitFramebuffer → XRWebGLLayer 
 
 | Élément | Fichier | Rôle |
 |---|---|---|
-| Manifeste | `public/manifest.webmanifest` | Nom, icônes, couleurs, `display: standalone` : l'application est installable |
-| Service Worker | `public/sw.mjs` | Stratégie « réseau d'abord, cache en secours » : hors ligne, tout est servi depuis le cache |
-| Enregistrement | `src/pwa.mjs` | `navigator.serviceWorker.register('./sw.js')`, puis envoi des fichiers déjà chargés au cache |
-| Icônes | `public/icons/` | 192 et 512 px, version « maskable », icône Apple |
+| Manifeste | `src/manifest.webmanifest` | Nom, icônes, couleurs, `display: standalone` : l'application est installable |
+| Service Worker | `src/sw.mjs` (servi à la racine du site : `./sw.mjs`) | Stratégie « réseau d'abord, cache en secours » : hors ligne, tout est servi depuis le cache |
+| Enregistrement | `src/scripts/pwa.mjs` | `navigator.serviceWorker.register('./sw.mjs', { type: 'module' })`, puis envoi des fichiers déjà chargés au cache |
+| Icônes | `src/assets/icons/` | 192 et 512 px, version « maskable », icône Apple |
 
 Vérification : Chrome → F12 → onglet **Application** → *Manifest* et *Service Workers* ; cocher *Offline* puis recharger.
 
@@ -118,3 +125,52 @@ Vérification : Chrome → F12 → onglet **Application** → *Manifest* et *Ser
 
 `npm run build` produit le dossier `dist/` avec des chemins relatifs (`base: './'`), prêt pour GitHub Pages,
 qui fournit le HTTPS obligatoire pour WebXR. En développement, `localhost` est accepté sans HTTPS.
+
+## 10. Arborescence du projet
+
+Toute l'application est dans `src/`, qui est la **racine de Vite** (`root: 'src'` dans `vite.config.mjs`) :
+l'adresse d'un fichier sur le site est son chemin à partir de `src/` (`src/assets/models/heart.glb` → `/assets/models/heart.glb`).
+
+```
+src/
+├── index.html              Page d'accueil (point d'entrée du site)
+├── manifest.webmanifest    Manifeste de la PWA
+├── sw.mjs                  Service Worker
+├── assets/                 Fichiers servis tels quels
+│   ├── models/             Modèles 3D .glb, et draco/ (décodeur Draco de Three.js)
+│   ├── missions/           missions.json : textes, explications et missions de chaque organe
+│   ├── icons/              Icônes de l'application
+│   └── audio/              Sons
+├── pages/                  Pages d'essai des visuels (atlas, biologie, body, organs, xray)
+├── styles/                 styles.css
+└── scripts/                Tout le JavaScript de l'application (.mjs)
+    ├── main.mjs, pwa.mjs   Point d'entrée et enregistrement du Service Worker
+    ├── core/               Moteur (Engine, Renderer, XRManager, XRPresenter, LevelManager…)
+    ├── systems/            Systèmes réutilisables (Interaction, Teleport, Particles, UIPanel…)
+    ├── levels/             Niveaux (BaseLevel, HeartLevel, LungsLevel, BrainLevel)
+    ├── scenes/             Scène de départ (BodyScene)
+    ├── data/               État du jeu et sauvegarde (GameState, Storage)
+    ├── shaders/            Shaders TSL
+    ├── debug/              Scène de test du moteur
+    ├── pages/              Scripts des pages de src/pages/
+    └── tests/              Tests unitaires (*.test.mjs) et de bout en bout (e2e/*.spec.mjs)
+```
+
+| Dossier | Pourquoi |
+|---|---|
+| `src/index.html`, `src/pages/` | Les pages HTML. Le build construit l'accueil et les 5 pages d'essai (`build.rollupOptions.input`). |
+| `src/sw.mjs`, `src/manifest.webmanifest` | Restent à la racine de `src/`, donc à la racine du site : la portée d'un Service Worker est limitée au dossier d'où il est servi, il doit être à la racine pour contrôler toute l'application. |
+| `src/assets/` | Remplace l'ancien dossier `public/`. Ces fichiers sont chargés par leur nom pendant l'exécution (`assets/models/heart.glb`, `assets/missions/missions.json`, décodeur Draco) : leur adresse doit rester fixe. Le plugin `inside-human-static-files` de `vite.config.mjs` les sert sans transformation en développement et les copie tels quels dans `dist/` au build. |
+| `src/scripts/` | Tout le code JavaScript, rangé par rôle (moteur, systèmes, niveaux…). Les noms des fichiers qui exportent une classe sont en PascalCase (`Engine.mjs`). |
+| `src/scripts/tests/` | Les tests sont à côté du code qu'ils vérifient. Ils ne sont importés par aucune page : ils n'arrivent jamais dans `dist/`. |
+| `src/styles/` | Feuilles de style ; Vite les regroupe et les minifie au build. |
+
+**Ce qui reste à la racine du projet, et pourquoi :**
+
+- `package.json`, `package-lock.json`, `vite.config.mjs`, `playwright.config.mjs`, `.nvmrc` : npm, Vite et Playwright
+  cherchent leur configuration à la racine du projet (c'est aussi de là que sont lancées toutes les commandes `npm`).
+- `tools/` : outils de développement (script Blender, scripts de migration). Ils ne font pas partie de l'application
+  et ne doivent pas être publiés sur le site : hors de `src/`, ils ne peuvent pas se retrouver dans `dist/`.
+- `docs/` et les fichiers `.md` : documentation du projet.
+- `.github/workflows/ci-cd.yml` : GitHub Actions ne lit les workflows qu'à cet emplacement.
+- `dist/` (non suivi par git) : résultat du build, publié sur GitHub Pages.
