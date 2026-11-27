@@ -16,10 +16,11 @@
  */
 import { defineConfig } from '@playwright/test';
 import fs from 'fs';
+import path from 'path';
 
 // Le projet passe en HTTPS si un certificat mkcert existe (voir vite.config.mjs).
 const hasCertificate = [ 'certs', 'certificates' ].some( ( dir ) =>
-	fs.existsSync( dir ) && fs.readdirSync( dir ).some( ( file ) => file.endsWith( '-key.pem' ) ) );
+	fs.existsSync( path.resolve( import.meta.dirname, dir ) ) && fs.readdirSync( path.resolve( import.meta.dirname, dir ) ).some( ( file ) => file.endsWith( '-key.pem' ) ) );
 const protocol = hasCertificate ? 'https' : 'http';
 
 export const DEV_URL = `${protocol}://localhost:5173`;
@@ -32,7 +33,9 @@ const args = [ '--enable-unsafe-webgpu' ];
 if ( linux ) args.push( '--enable-features=Vulkan', '--use-vulkan=swiftshader', '--use-angle=swiftshader', '--disable-vulkan-surface' );
 
 export default defineConfig( {
-	testDir: './tests/e2e',
+	// Les tests sont rangés avec les scripts de l'application ; les serveurs sont lancés depuis la racine
+	// (vite.config.mjs fixe root: 'src').
+	testDir: './src/scripts/tests/e2e',
 	// Plus de temps sur les serveurs d'intégration continue (2 processeurs, WebGPU en rendu logiciel).
 	timeout: process.env.CI ? 180_000 : 90_000,
 	expect: { timeout: 15_000 },

@@ -1,0 +1,66 @@
+// Banc d'essai « corps en radio » : /pages/xray.html   (?spin pour rotation lente)
+import * as THREE from 'three/webgpu';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createXrayBody } from '../systems/XrayBody.mjs';
+
+const q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000, 0);
+document.body.appendChild(renderer.domElement);
+await renderer.init();
+if (!renderer.backend.isWebGPUBackend) throw new Error('WebGPU est obligatoire : ce navigateur ou cette carte graphique ne le fournit pas (pas de repli WebGL).');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 100);
+scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x223366, 1.6));
+const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2, 4, 6); scene.add(key);
+
+const body = createXrayBody({ branches: Number(q.get('b')) || 1 });
+scene.add(body.group);
+
+// Vrai cœur : src/assets/models/heart.glb (ignoré avec ?procedural)
+// Réglages : ?hs=1.9 (taille) · ?rx= ?ry= ?rz= (rotation en degrés) · ?dy=0.12 (hauteur)
+if (!q.has('procedural')) {
+  const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
+  const rad = (k, d) => num(k, d) * Math.PI / 180;
+  body.loadRealHeart('/assets/models/heart.glb', {
+    height: num('hs', 1.9), rotation: [rad('rx', 0), rad('ry', 180), rad('rz', 0)], position: [0, num('dy', 0.12), 0],
+  })
+  .then((r) => console.info('heart.glb chargé', r.hasAnimation ? '(animation incluse)' : ''))
+    .catch(() => console.info('heart.glb absent : cœur généré par code'));
+}
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+const VIEW = {
+  1: { pos: [0, 0, 25], target: [0, 0, 0] },
+  2: { pos: [0.3, 2.6, 10], target: [0.3, 2.4, 0] },
+  3: { pos: [0.3, 2.3, 4.6], target: [0.3, 2.3, 0] },
+};
+function view(k) {
+  const v = VIEW[k]; camera.position.set(...v.pos); controls.target.set(...v.target); controls.update();
+  document.querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('on', b.dataset.v === String(k)));
+}
+document.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => view(b.dataset.v)));
+let back = q.has('back'), yaw = back ? Math.PI : 0;
+const flip = document.getElementById('flip');
+flip.addEventListener('click', () => { back = !back; yaw = back ? Math.PI : 0; flip.textContent = back ? 'Vue de face' : 'Vue de dos'; });
+addEventListener('keydown', (e) => { if (VIEW[e.key]) view(e.key); });
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+view(q.get('v') || 1);
+if (back) body.group.rotation.y = Math.PI;
+document.getElementById('hud').textContent = 'démarrage…';   // signale que l'initialisation est terminée
+
+const hud = document.getElementById('hud'), clock = new THREE.Clock(); let frames = 0, acc = 0;
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  body.update(dt);
+  if (q.has('spin')) yaw += dt * 0.35;
+  body.group.rotation.y += (yaw - body.group.rotation.y) * Math.min(1, dt * 4);
+  controls.update();
+  renderer.render(scene, camera);
+  frames++; acc += dt;
+  if (acc > 0.5) { hud.textContent = `${'WebGPU'} · ${Math.round(frames / acc)} i/s · touches 1 2 3 : vues`; frames = 0; acc = 0; }
+});

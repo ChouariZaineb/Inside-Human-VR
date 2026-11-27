@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside Human VR — Contrôle des modèles Blender</title>
+<style>
+body{margin:0;background:#0a1020;color:#e9f1ff;font-family:system-ui, sans-serif}
+header{position:fixed;top:1rem;left:1rem;z-index:3;background:#101a30e8;padding:1rem 1.4rem;border-radius:12px;max-width:26rem}
+h1{font-size:1.1rem;margin:0 0 .3rem}p{font-size:.85rem;margin:.3rem 0}#status{color:#b8dbff}canvas{display:block}
+</style></head><body>
+<header><h1>Contrôle Blender — Biologie</h1><p>Globule rouge · Plaquette · O₂ · CO₂</p><p id="status">Chargement des modèles GLB…</p><p>Souris : rotation, molette : zoom.</p></header>
+<script type="importmap">{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+  }
+}</script>
+<script type="module" src="../scripts/pages/biologie.mjs"></script>
+</body></html>

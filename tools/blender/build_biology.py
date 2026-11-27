@@ -10,7 +10,7 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'public' / 'assets' / 'models'
+OUT = ROOT / 'src' / 'assets' / 'models'
 OUT.mkdir(parents=True, exist_ok=True)
 SOURCE = ROOT / 'tools' / 'blender' / 'biologie_source.blend'
 
