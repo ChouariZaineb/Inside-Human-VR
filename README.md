@@ -1,7 +1,6 @@
 # Inside Human VR
 
-[![CI](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci.yml/badge.svg)](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci.yml)
-[![Déploiement](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/deploy.yml/badge.svg)](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/deploy.yml)
+[![CI/CD](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ChouariZaineb/Inside-Human-VR/actions/workflows/ci-cd.yml)
 
 **Démo en ligne : https://chouarizaineb.github.io/Inside-Human-VR/** (Chrome ou Edge récent, WebGPU obligatoire)
 
