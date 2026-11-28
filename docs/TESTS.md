@@ -19,19 +19,21 @@ Le projet a deux niveaux de tests :
 4. Le test **pilote les manettes** comme un utilisateur : il oriente le rayon vers un objet, appuie sur la gâchette ou le grip, bouge le joystick, déplace la main.
 5. Il **vérifie l'état de l'application** : niveau chargé, objet tenu, score, couleur du sang, vibrations demandées, etc.
 
-## 2. Les 11 scénarios
+## 2. Les 13 scénarios
 
 | Fichier | Scénario | Exigence du cahier des charges |
 |---|---|---|
 | `demarrage.spec.mjs` | Le rendu utilise le backend **WebGPU** de Three.js r187 | ENF-03 |
 | `demarrage.spec.mjs` | La scène de départ affiche le **corps humain** | EF-01, EF-03 |
 | `demarrage.spec.mjs` | La page déclare le **manifeste** et enregistre le **Service Worker** | ENF-04 |
+| `cdn.spec.mjs` | **Three.js r187 est chargé depuis le CDN** jsDelivr (`three.webgpu.js`), jamais depuis `node_modules` | ENF-03 |
 | `vr.spec.mjs` | La session **`immersive-vr`** est rendue en **WebGPU**, avec les deux manettes suivies | EF-02 |
 | `vr.spec.mjs` | La **gâchette** sur le cœur ouvre le niveau du cœur, et la manette **vibre** | EF-05 |
 | `vr.spec.mjs` | Le **grip** saisit le cœur, le **joystick** le fait tourner, il revient à sa place une fois lâché | Interactivité |
 | `vr.spec.mjs` | Le joystick fait **tourner l'utilisateur de 30°** (*snap turn*) | ENF-06 (confort) |
 | `poumons.spec.mjs` | Déposer les **6 molécules** au bon endroit termine la mission avec **100 points** et un sang **rouge** | EF-07, EF-09 |
 | `poumons.spec.mjs` | Une molécule lâchée **hors des zones** retourne à sa place sans changer le score | EF-07 |
+| `biologie.spec.mjs` | Les **globules rouges**, les **plaquettes** et les molécules d'**O₂** et de **CO₂** des poumons sont issus des **modèles Blender** (`.glb`), avec la bonne composition atomique | EF-03, EF-07 |
 | `pwa.spec.mjs` | Le manifeste décrit une application **installable** (nom, `standalone`, icônes 192 et 512 accessibles) | ENF-04 |
 | `pwa.spec.mjs` | Après une première visite, l'application **démarre hors ligne**, et le badge affiche « Hors ligne · mode cache » | ENF-04 |
 
@@ -46,7 +48,7 @@ npm install
 Puis :
 
 ```
-npm run test:e2e           # lance les 11 scénarios (environ 3 minutes)
+npm run test:e2e           # lance les 13 scénarios (environ 3 minutes)
 npm run test:e2e:report    # ouvre le rapport HTML du dernier passage
 npx playwright test vr     # lance seulement les tests d'un fichier (ici vr.spec.mjs)
 ```
